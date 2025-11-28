@@ -1,0 +1,13 @@
+{
+  "name": "wordpress",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Geoff Taylor",
+  "license": "GPL-3.0-or-later",
+  "description": "A WPGraphQL extension. Adds the queries needed to render WP content on a 1:1 scale in a headless environment."
+}

@@ -1,0 +1,88 @@
+{
+    "name": "axistaylor/nextpress",
+    "version": "1.0.0",
+    "description": "Render WordPress Gutenberg content 1:1 in Next.js. Extends WPGraphQL with enqueued asset queries for headless WordPress implementations.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "wordpress",
+        "wpgraphql",
+        "nextjs",
+        "headless",
+        "gutenberg"
+    ],
+    "homepage": "https://github.com/axistaylor/nextpress",
+    "authors": [
+        {
+            "name": "AxisTaylor, LLC",
+            "email": "support@axistaylor.com",
+            "homepage": "https://axistaylor.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/axistaylor/nextpress/issues",
+        "source": "https://github.com/axistaylor/nextpress"
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "lucatume/wp-browser": "^4.0",
+        "wp-graphql/wp-graphql-testcase": "^3.0",
+        "wpackagist-plugin/wp-graphql": "*",
+        "johnpbloch/wordpress": "*"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        }
+    ],
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Support\\": "tests/Support/",
+            "Tests\\Integration\\": "tests/Integration/"
+        }
+    },
+    "scripts": {
+        "install-test-env": "bash bin/install-test-env.sh",
+        "test": "vendor/bin/codecept run Integration",
+        "test:integration": "vendor/bin/codecept run Integration",
+        "codecept": "vendor/bin/codecept"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "process-timeout": 0,
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        }
+    },
+    "extra": {
+        "installer-paths": {
+            "tests/_plugins/{$name}/": ["type:wordpress-plugin"],
+            "tests/_themes/{$name}/": ["type:wordpress-theme"]
+        },
+        "wordpress-install-dir": "tests/_wordpress"
+    },
+    "archive": {
+        "name": "nextpress",
+        "exclude": [
+            "/.*",
+            "/bin",
+            "/docker",
+            "/local",
+            "/plugin-build",
+            "/tests",
+            "!/vendor",
+            "/codeception.yml",
+            "/composer.json",
+            "/composer.lock",
+            "/docker-compose.yml",
+            "/phpunit.xml",
+            "/webpack.config.js",
+            "/tsconfig.json"
+        ]
+    }
+}

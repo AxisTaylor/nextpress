@@ -1,4 +1,4 @@
-import { withWCR } from '@axistaylor/wpgraphql-next-content-renderer/withWCR';
+import { withWCR } from 'nextpress/withWCR';
 
 /**
  * @type {import('next').NextConfig}

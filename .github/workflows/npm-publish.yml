@@ -16,6 +16,6 @@ jobs:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org/'
       - run: npm ci
-      - run: npm publish --access public --workspace=packages/wpgraphql-next-content-renderer
+      - run: npm publish -w=packages/js --access public 
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

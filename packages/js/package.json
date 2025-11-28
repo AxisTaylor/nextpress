@@ -1,7 +1,20 @@
 {
-  "name": "@axistaylor/wpgraphql-next-content-renderer",
-  "version": "0.0.1",
-  "description": "Provides components and tooling to render WordPress page content on a 1:1 scale",
+  "name": "@axistaylor/nextpress",
+  "version": "1.0.0",
+  "description": "Render WordPress Gutenberg content 1:1 in Next.js. Automatic script/stylesheet loading, middleware proxy, and multi-WordPress support.",
+  "keywords": [
+    "wordpress",
+    "wpgraphql",
+    "nextjs",
+    "headless",
+    "gutenberg",
+    "woocommerce",
+    "react"
+  ],
+  "homepage": "https://github.com/axistaylor/nextpress",
+  "bugs": {
+    "url": "https://github.com/axistaylor/nextpress/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -34,20 +47,26 @@
   ],
   "dependencies": {
     "html-react-parser": "^5.1.10",
-    "lodash": "^4.17.21"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/lodash": "^4.17.6",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.3.3",
-    "next": "^14.2.5",
-    "react": "^18.3.1",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "next": "^16.0.5",
+    "react": "^19.2.0",
     "rollup": "^4.18.0",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-typescript-paths": "^1.5.0",
+    "ts-jest": "^29.4.5",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.2"
@@ -61,12 +80,16 @@
     "build:clean": "rm -rf dist",
     "build:files": "rollup -c --bundleConfigAsCjs",
     "build": "npm run build:clean && npm run build:files",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit"
   },
-  "author": "Geoff Taylor <geoff@axistaylor.com>",
+  "author": "AxisTaylor <support@axistaylor.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/axistaylor/wpgraphql-next-content-renderer.git"
+    "url": "https://github.com/axistaylor/nextpress.git"
   }
 }

@@ -1,0 +1,53 @@
+name: Release WordPress Plugin
+
+on:
+  push:
+    tags:
+      - 'wp-v*'
+
+jobs:
+  release:
+    name: Package and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          extensions: mbstring, intl
+          tools: composer
+
+      - name: Install dependencies
+        working-directory: packages/wordpress
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG_NAME#wp-v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Artifact
+        working-directory: packages/wordpress
+        run: |
+          mkdir -p plugin-build
+          composer archive -vvv --format=zip --file="plugin-build/nextpress"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextpress-${{ steps.version.outputs.version }}
+          path: packages/wordpress/plugin-build/nextpress.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: packages/wordpress/plugin-build/nextpress.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

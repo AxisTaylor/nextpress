@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { RenderScripts, EnqueuedScript } from "@axistaylor/wpgraphql-next-content-renderer";
+import { RenderScripts, EnqueuedScript } from "nextpress";
 
 
 export interface ScriptsProps {

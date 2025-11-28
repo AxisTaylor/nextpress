@@ -1,4 +1,4 @@
-import { Content } from '@axistaylor/wpgraphql-next-content-renderer';
+import { Content } from 'nextpress';
 
 import { fetchContentByUri } from '@/lib/utils';
 import { fetchStylesAndScriptsByUri } from '@/lib/utils';

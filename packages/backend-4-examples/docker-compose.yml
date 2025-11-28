@@ -22,5 +22,6 @@ services:
     image: bitpoke/wordpress-runtime:bedrock-php-8.1
     volumes:
       - ./:/app
+      - ../wordpress:/app/web/app/plugins/nextpress
     env_file:
       - .env

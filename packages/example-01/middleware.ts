@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { proxyByWCR } from '@axistaylor/wpgraphql-next-content-renderer/proxyByWCR';
+import { proxyByWCR } from 'nextpress/proxyByWCR';
 import { getTokens } from '@/lib/session';
 
 export const middleware = async (request: NextRequest) => {
