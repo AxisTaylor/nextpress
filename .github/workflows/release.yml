@@ -45,11 +45,14 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create WordPress plugin tag
+        id: wp-tag
         if: steps.changesets.outputs.published == 'true' || steps.changesets.outputs.hasChangesets == 'false'
         run: |
           # Extract version from WordPress package.json (managed by changesets)
           VERSION=$(node -p "require('./packages/wordpress/package.json').version")
           TAG_NAME="wp-v${VERSION}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
           # Check if tag already exists
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
@@ -61,3 +64,41 @@ jobs:
             git tag "$TAG_NAME"
             git push origin "$TAG_NAME"
           fi
+
+      - name: Setup PHP
+        if: steps.wp-tag.outputs.version
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, intl
+          tools: composer
+
+      - name: Install WordPress plugin dependencies
+        if: steps.wp-tag.outputs.version
+        working-directory: packages/wordpress
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Create WordPress plugin zip
+        if: steps.wp-tag.outputs.version
+        working-directory: packages/wordpress
+        run: |
+          mkdir -p plugin-build
+          composer archive -vvv --format=zip --file="plugin-build/nextpress"
+
+      - name: Upload WordPress plugin artifact
+        if: steps.wp-tag.outputs.version
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextpress-${{ steps.wp-tag.outputs.version }}
+          path: packages/wordpress/plugin-build/nextpress.zip
+
+      - name: Create WordPress GitHub Release
+        if: steps.wp-tag.outputs.version
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.wp-tag.outputs.tag_name }}
+          files: packages/wordpress/plugin-build/nextpress.zip
+          generate_release_notes: true
+          name: WordPress Plugin v${{ steps.wp-tag.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
