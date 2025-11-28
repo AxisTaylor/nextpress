@@ -3,7 +3,7 @@
  * Plugin Name: NextPress
  * Plugin URI: https://github.com/axistaylor/nextpress
  * Description: Render WordPress Gutenberg content 1:1 in Next.js. Extends WPGraphQL with enqueued asset queries for headless WordPress implementations.
- * Version: 0.0.1
+ * Version: 1.0.0
  * Author: AxisTaylor
  * Author URI: https://axistaylor.com
  * Text Domain: nextpress
@@ -46,7 +46,7 @@ defined( 'ABSPATH' ) || exit;
 function constants() {
 	// Plugin version.
 	if ( ! defined( 'NEXTPRESS_VERSION' ) ) {
-		define( 'NEXTPRESS_VERSION', '0.0.1' );
+		define( 'NEXTPRESS_VERSION', '1.0.0' );
 	}
 	// Plugin Folder Path.
 	if ( ! defined( 'NEXTPRESS_PLUGIN_DIR' ) ) {
