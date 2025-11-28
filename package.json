@@ -1,28 +1,43 @@
 {
   "name": "@axistaylor/nextpress",
-  "version": "0.0.2-0",
-  "description": "Monorepo for WPGraphQL Next Content Renderer",
+  "version": "1.0.0",
+  "description": "Monorepo for NextPress - Render WordPress Gutenberg content 1:1 in Next.js",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
   "workspace-versions": {
-    "packages/js": "0.0.2-0",
-    "packages/wordpress": "0.0.1"
+    "packages/js": "1.0.0",
+    "packages/wordpress": "1.0.0"
   },
   "scripts": {
     "update-versions": "ts-node scripts/update-versions.ts",
-    "build": "npm run build -w ./packages/js",
+    "build": "npm run build -w ./packages/js && npm run build -w ./packages/wordpress",
+    "build:js": "npm run build -w ./packages/js",
+    "build:wordpress": "npm run build -w ./packages/wordpress",
     "update-demo-plugins": "npm run update-plugins -w ./packages/backend-4-examples",
     "prepare": "npm run build",
     "dev:package": "npm run build:watch -w ./packages/js",
-    "dev:wp-backend": "npm run docker -w ./packages/backend-4-examples",
-    "dev:wp-frontend": "npm run dev -w ./packages/example-01",
-    "dev:e2e": "npm run cy:open -w ./packages/e2e-tests",
-    "dev": "npm-run-all --parallel dev:package dev:wp-backend dev:wp-frontend dev:e2e",
+    "dev:wp-backend": "npm run start -w ./packages/backend-4-examples",
+    "dev:wp-frontend": "npm run dev -w ./packages/nextjs-example",
+    "test:e2e": "npm run test -w ./packages/e2e-tests",
+    "test:e2e:headed": "npm run test:headed -w ./packages/e2e-tests",
+    "test:e2e:ui": "npm run test:ui -w ./packages/e2e-tests",
+    "test:e2e:debug": "npm run test:debug -w ./packages/e2e-tests",
+    "test:unit": "npm run test -w ./packages/js",
+    "test:wordpress": "npm run test -w ./packages/wordpress",
+    "test": "npm run test:unit && npm run test:e2e",
+    "typecheck": "npm run typecheck -w ./packages/js",
+    "lint:example": "npm run lint -w ./packages/nextjs-example",
+    "dev": "npm-run-all --parallel dev:wp-backend dev:wp-frontend",
     "stop:wp-backend": "npm run docker:down -w ./packages/backend-4-examples",
     "stop": "npm-run-all --parallel stop:wp-backend",
-    "save-wp-db": "npm run save-db -w ./packages/backend-4-examples"
+    "save-wp-db": "npm run save-db -w ./packages/backend-4-examples",
+    "lighthouse": "lhci autorun",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "release": "npm run build && changeset publish"
   },
   "keywords": [
     "wpgraphql",
@@ -35,9 +50,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/axistaylor/wpgraphql-next-content-renderer.git"
+    "url": "https://github.com/axistaylor/nextpress.git"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
+    "@lhci/cli": "^0.15.1",
     "npm-run-all": "^4.1.5",
     "semver": "^7.6.3",
     "ts-node": "^10.9.2",

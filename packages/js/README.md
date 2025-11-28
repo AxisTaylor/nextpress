@@ -1,177 +1,140 @@
-# WPGraphQL Next Content Renderer
+# @axistaylor/nextpress
 
-A series of tools and React components for rendering WordPress content pages in Next.js
+A comprehensive toolkit for rendering WordPress Gutenberg content 1:1 in Next.js applications. Includes automatic script and stylesheet loading, middleware proxy for WordPress APIs, and multi-WordPress instance support.
 
-## Usage
+[![npm version](https://img.shields.io/npm/v/@axistaylor/nextpress.svg)](https://www.npmjs.com/package/@axistaylor/nextpress)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-1. Install with `npm install @axistaylor/wpgraphql-next-content-renderer`
-2. Update your `next.config.mjs` file:
-  
-  ```js
-  import { withWCR } from '@axistaylor/wpgraphql-next-content-renderer/withWCR';
-  
-  /**
-   * @type {import('next').NextConfig}
-   */
-  const nextConfig = {
-    env: {
-      ...
-    }
-  };
-  
-  const wpDomain = 'example.com';
-  const wpProtocol = 'https';
-  
-  export default withWCR(nextConfig, {
-    wpDomain,
-    wpProtocol,
-    wpHomeUrl: `${wpProtocol}://${wpDomain}`,
-    wpSiteUrl: `${wpProtocol}://${wpDomain}/wp`, // <-- `/wp` is typically add for some non-traditional WordPress setups like WP Bedrock.
-    frontendDomain: 'localhost:3000',
-    frontendProtocol: 'http',
-  });
-  ```
+## Features
 
-3. Add a `middleware.ts` file:
+- **1:1 WordPress Content Rendering** - Render Gutenberg blocks exactly as they appear in WordPress
+- **Automatic Asset Loading** - Scripts and stylesheets with dependency resolution
+- **Middleware Proxy** - Seamless WordPress REST API, admin-ajax.php, and WooCommerce integration
+- **Multi-WordPress Support** - Connect to multiple WordPress backends
+- **Server Components** - Full React Server Component support for optimal performance
+- **TypeScript** - Complete type definitions included
 
-  ```ts
-  export const middleware = async (request: NextRequest) => {
-    return await proxyByWCR(request);
-  }
+## Quick Start
 
-  export const config = {
-    matcher: [
-        '/api/wp',
-        '/api/wc',
-        '/api/wp-internal-assets/:path*',
-        '/api/wp-assets/:path*',
-        '/api/wp-json/:path*',
-    ],
-  }
-  ```
+### 1. Install
 
-4. Now you're to query for and render the content pages:
+```bash
+npm install @axistaylor/nextpress
+```
 
-  ```ts
-  // ./lib/utils.ts
-  async function fetchContentAndScripts(uri: string) {
-    const response = await fetch(process.env.GRAPHQL_ENDPOINT as  string, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        query: `query ($uri: String!) {
-          nodeByUri(uri: $uri) {
-            ... on ContentNode {
-              enqueuedStylesheets(first: 500) {
-                nodes {
-                  handle
-                  src
-                  version
-                  after
-                  before
-                }
-              }
-              enqueuedScripts(first: 500) {
-                nodes {
-                  handle
-                  src
-                  strategy
-                  version
-                  after
-                  group
-                  location
-                  before
-                  extraData
-                }
-              }
-            }
-            ... on Page {
-              content
-            }
-            ... on Post {
-              content
-            }
-          }
-        }`,
-        variables: { uri }
-      }),
-      cache: 'no-store',
-    });
-  
-    const { data } = await response.json();
-    const node = data?.nodeByUri;
-  
-    if (!node) {
-      return {
-        content: '',
-        scripts: [],
-        stylesheets: [],
-      };
-    }
-  
-    const content = node.content;
-    const scripts = node.enqueuedScripts.nodes;
-    const stylesheets = node.enqueuedStylesheets.nodes;
-  
-    return {
-      content,
-      scripts,
-      stylesheets,
-    }
-  }
-  ```
+### 2. Configure Next.js
 
-  ```tsx
-  // ./components/Styles.tsx
-  'use client';
+```js
+// next.config.mjs
+import { withWCR } from '@axistaylor/nextpress/withWCR';
 
-  import { RenderStylesheets, EnqueuedStylesheet } from   "@axistaylor/wpgraphql-next-content-renderer/client";
-  
-  export default function Styles({ stylesheets }: { stylesheets:   EnqueuedStylesheet[] }) {
-    return <RenderStylesheets stylesheets={stylesheets} />;
-  }
-  ```
+const nextConfig = {};
 
-  ```tsx
-  // ./components/Scripts.tsx
-  import type { PropsWithChildren } from 'react';
-  import { RenderScripts, EnqueuedScript } from "@axistaylor/  wpgraphql-next-content-renderer";
-  
-  
-  export interface ScriptsProps {
-    scripts: EnqueuedScript[];
-    type?: 'header' | 'footer';
-  }
-  
-  export default function Scripts({ scripts, type, children }:   PropsWithChildren<ScriptsProps>) {
-    return <RenderScripts scripts={scripts} type={type}>{children}</  RenderScripts>;
-  }
-  ```
+export default withWCR(nextConfig, {
+  wpDomain: 'your-wordpress.com',
+  wpProtocol: 'https',
+  frontendDomain: 'localhost:3000',
+  frontendProtocol: 'http',
+});
+```
 
-  ```tsx
-  // ./app/page.tsx
-  import { Content } from '@axistaylor/wpgraphql-next-content-renderer';
-  
-  import { fetchContentAndScripts } from '@/lib/utils';
-  import Styles from "@/components/Styles";
-  import Scripts from "@/components/Scripts";
-  
-  export default async function Home() {
-    const { content, stylesheets, scripts } = await fetchContentAndScripts('/sample-page');
-  
-    return (
-      <>
-        <Styles stylesheets={stylesheets} />
-        <Scripts scripts={scripts}>
-          <div id="main-content" className="min-h-screen px-4 pt-4">
-            <Content content={content} />
-          </div>
-        </Scripts>
-      </>
-    );
-  }
-  ```
+### 3. Add Middleware
 
-### Optimization Recommendation
+```ts
+// middleware.ts
+import { proxyByWCR } from '@axistaylor/nextpress/proxyByWCR';
+import { NextRequest } from 'next/server';
 
-Some wordpress content pages use a lot of dynamic inline scripts and styles and require the `proxyByWCR` middleware function to work as intended. This has the added effect of making the route dynamic and incapable of being statically generated. To mitigate the potential performance hit, isolate the wordpress content pages to a route group with it's own dedicated root layout. Read more it [here](https://nextjs.org/docs/app/building-your-application/routing/route-groups#creating-multiple-root-layouts).
+export async function middleware(request: NextRequest) {
+  return proxyByWCR(request);
+}
+
+export const config = {
+  matcher: [
+    '/atx/:slug/wp-json/:path*',
+    '/atx/:slug/wp',
+    '/atx/:slug/wc',
+    '/atx/:slug/wp-assets/:path*',
+  ],
+};
+```
+
+### 4. Create Layout with Scripts & Styles
+
+```tsx
+// app/(wordpress)/layout.tsx
+import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
+import { RenderStylesheets } from '@axistaylor/nextpress';
+import { headers } from 'next/headers';
+import { fetchAssets } from '@/lib/wordpress';
+
+export default async function WordPressLayout({ children }) {
+  const headersList = await headers();
+  const uri = headersList.get('x-nextpress-uri') || '/';
+
+  const { scripts, stylesheets } = await fetchAssets(uri);
+  const headerScripts = scripts.filter(s => s.location === 'HEADER');
+  const footerScripts = scripts.filter(s => s.location === 'FOOTER');
+
+  return (
+    <html>
+      <head>
+        <RenderStylesheets stylesheets={stylesheets} />
+        <HeadScripts scripts={headerScripts} />
+      </head>
+      <body>
+        {children}
+        <BodyScripts scripts={footerScripts} />
+      </body>
+    </html>
+  );
+}
+```
+
+### 5. Render Content
+
+```tsx
+// app/(wordpress)/[...uri]/page.tsx
+import { Content } from '@axistaylor/nextpress';
+import { fetchPage } from '@/lib/wordpress';
+
+export default async function Page({ params }) {
+  const uri = '/' + (params.uri?.join('/') || '');
+  const { content } = await fetchPage(uri);
+
+  return <Content content={content} />;
+}
+```
+
+## Documentation
+
+For complete documentation, see the [docs folder](../../docs/):
+
+- [Getting Started](../../docs/getting-started.md)
+- [Content Component](../../docs/content.md)
+- [HeadScripts & BodyScripts](../../docs/head-scripts.md)
+- [RenderStylesheets](../../docs/render-stylesheets.md)
+- [withWCR Configuration](../../docs/with-wcr.md)
+- [proxyByWCR Middleware](../../docs/proxy-by-wcr.md)
+- [Multi-WordPress Setup](../../docs/multi-wordpress.md)
+- [WordPress Plugin](../../docs/wordpress-plugin.md)
+- [Troubleshooting](../../docs/troubleshooting.md)
+
+## Requirements
+
+- Next.js 14.2.5+
+- React 18.3.1+
+- WordPress with WPGraphQL plugin
+- NextPress WordPress plugin
+
+## Contributing
+
+We welcome contributions! Whether it's bug fixes, new features, or documentation improvements.
+
+- Read the [Contributing Guide](../../CONTRIBUTING.md)
+- Check out [open issues](https://github.com/axistaylor/nextpress/issues)
+- Submit a [Pull Request](https://github.com/axistaylor/nextpress/pulls)
+
+## License
+
+MIT

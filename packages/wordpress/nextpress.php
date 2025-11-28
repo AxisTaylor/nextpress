@@ -1,19 +1,36 @@
 <?php
 /**
  * Plugin Name: NextPress
- * Plugin URI: https://github.com/axistaylor/wpgraphql-next-content-render
- * Description: A WPGraphQL extension. Adds the queries needed to render WP content on a 1:1 scale in a headless environment.
- * Version: 0.0.1
- * Author: kidunot89
+ * Plugin URI: https://github.com/axistaylor/nextpress
+ * Description: Render WordPress Gutenberg content 1:1 in Next.js. Extends WPGraphQL with enqueued asset queries for headless WordPress implementations.
+ * Version: 1.0.0
+ * Author: AxisTaylor
  * Author URI: https://axistaylor.com
  * Text Domain: nextpress
  * License: GPL-3
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
- * WPGraphQL requires at least: 1.27.0+
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * WPGraphQL requires at least: 1.27.0
  *
  * @package     NextPress
- * @author      kidunot89
+ * @author      AxisTaylor <support@axistaylor.com>
  * @license     GPL-3
+ *
+ * @copyright   Copyright (c) 2024-2025 AxisTaylor, LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 namespace NextPress;
@@ -29,7 +46,7 @@ defined( 'ABSPATH' ) || exit;
 function constants() {
 	// Plugin version.
 	if ( ! defined( 'NEXTPRESS_VERSION' ) ) {
-		define( 'NEXTPRESS_VERSION', '0.0.1' );
+		define( 'NEXTPRESS_VERSION', '1.0.0' );
 	}
 	// Plugin Folder Path.
 	if ( ! defined( 'NEXTPRESS_PLUGIN_DIR' ) ) {
@@ -78,21 +95,62 @@ function plugin_file_url( $filepath ) {
 	return plugins_url( $filepath, __FILE__ );
 }
 
-function load_plugin_includes() {
+/**
+ * Load early includes (don't depend on WPGraphQL)
+ *
+ * @return void
+ */
+function load_early_includes() {
     $include_directory_path = get_includes_directory();
 
+    // Load access functions
+    require_once trailingslashit( NEXTPRESS_PLUGIN_DIR ) . 'access-functions.php';
+
+    // Load settings classes
+    require_once $include_directory_path . 'class-settings-registry.php';
+    require_once $include_directory_path . 'class-settings.php';
+
+    // Load CORS class
+    require_once $include_directory_path . 'class-cors.php';
+
+    // Load Assets management class
+    require_once $include_directory_path . 'class-assets.php';
+}
+
+/**
+ * Load WPGraphQL-dependent includes
+ *
+ * @return void
+ */
+function load_graphql_includes() {
+    $include_directory_path = get_includes_directory();
+
+    // Load WPGraphQL integration classes
     require_once $include_directory_path . 'class-model.php';
     require_once $include_directory_path . 'class-dataloader.php';
     require_once $include_directory_path . 'class-schema.php';
 }
 
-function init() {
-    load_plugin_includes();
+// Define constants first
+constants();
+
+// Load early includes immediately (settings, CORS, etc.)
+load_early_includes();
+
+/**
+ * Initialize WPGraphQL functionality
+ *
+ * @return void
+ */
+function init_graphql() {
+    // Load WPGraphQL-dependent includes
+    load_graphql_includes();
+
+    // Initialize WPGraphQL integrations
     add_filter(
-        'graphql_data_loaders', 
-        function( $loaders, $context ) {
-            $loader                = new Uri_Assets\DataLoader( $context );
-            $loaders['uri_assets'] = &$loader;
+        'graphql_data_loader_classes',
+        function( $loaders ) {
+            $loaders['uri_assets'] = Uri_Assets\DataLoader::class;
 
             return $loaders;
         },
@@ -101,7 +159,39 @@ function init() {
     );
     new Uri_Assets\Schema();
 }
-add_action( 'graphql_init', __NAMESPACE__ . '\init' );
+add_action( 'graphql_init', __NAMESPACE__ . '\init_graphql' );
+
+/**
+ * Initialize admin functionality
+ *
+ * @return void
+ */
+function init_admin() {
+    // Initialize settings page
+    $settings = new Settings();
+    $settings->init();
+}
+add_action( 'after_setup_theme', __NAMESPACE__ . '\init_admin' );
+
+/**
+ * Initialize CORS functionality
+ *
+ * @return void
+ */
+function init_cors() {
+    new CORS();
+}
+add_action( 'plugins_loaded', __NAMESPACE__ . '\init_cors' );
+
+/**
+ * Initialize Assets management functionality
+ *
+ * @return void
+ */
+function init_assets() {
+    new Assets();
+}
+add_action( 'plugins_loaded', __NAMESPACE__ . '\init_assets' );
 
 function check_dependencies() {
     if ( class_exists( '\WPGraphQL' ) ) {

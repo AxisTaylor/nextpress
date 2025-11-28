@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "axistaylor/nextpress" }
+  ],
+  "commit": false,
+  "fixed": [],
+  "linked": [
+    ["@axistaylor/nextpress"]
+  ],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": [
+    "backend-4-examples",
+    "e2e-tests",
+    "example-01"
+  ]
+}
