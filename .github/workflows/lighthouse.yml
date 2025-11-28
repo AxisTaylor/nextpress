@@ -38,10 +38,33 @@ jobs:
       - name: Build JS package
         run: npm run build:js
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Install WordPress backend dependencies
+        working-directory: packages/backend-4-examples
+        run: composer install --prefer-dist --no-progress
+
+      - name: Start WordPress backend
+        working-directory: packages/backend-4-examples
+        run: |
+          docker compose up -d
+          echo "Waiting for WordPress backend..."
+          timeout 120 bash -c 'until curl -s http://localhost:8080 > /dev/null; do sleep 2; done'
+          echo "WordPress backend is ready"
+
       - name: Run Lighthouse CI
         run: npm run lighthouse
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Stop WordPress backend
+        if: always()
+        working-directory: packages/backend-4-examples
+        run: docker compose down
 
       - name: Upload Lighthouse report
         uses: actions/upload-artifact@v4
