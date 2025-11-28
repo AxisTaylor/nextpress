@@ -1,0 +1,386 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Content custom parser should fallback to default rendering when customParser returns null 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<p class="normal">Normal paragraph</p>",
+    "customParser": [MockFunction],
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content custom parser should render with customParser transforming elements 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<custom>Test</custom>",
+    "customParser": [MockFunction],
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content custom parser should use custom parser result when returned 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<special>Original</special>",
+    "customParser": [MockFunction],
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should correctly decode HTML entities 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<p>Price: $10.00</p>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should fix tables missing tbody wrapper 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+        <table>
+          <tr>
+            <td>Cell 1</td>
+            <td>Cell 2</td>
+          </tr>
+        </table>
+      ",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should handle complex table structures 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+        <table class="shop_table">
+          <tr class="cart_item">
+            <td class="product-name">Product</td>
+            <td class="product-price">$10.00</td>
+          </tr>
+        </table>
+      ",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should handle links with href 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<a href="/page">Link</a>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should handle links without href 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<a class="button">Click me</a>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should handle multiple HTML entities 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<p>Symbols: $ & < > "</p>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should not double-wrap tables with existing tbody 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+        <table>
+          <tbody>
+            <tr>
+              <td>Cell 1</td>
+            </tr>
+          </tbody>
+        </table>
+      ",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should preserve aria attributes 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<div aria-label="Product on sale" aria-hidden="true">Sale</div>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should preserve data-block-name attributes 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<div data-block-name="woocommerce/cart">Cart</div>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should preserve multiple data attributes 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<div data-product-id="123" data-quantity="2" data-price="10">Product</div>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should render WooCommerce cart block HTML from mock 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+<div data-block-name="woocommerce/cart" class="wp-block-woocommerce-cart alignwide is-loading">
+<div data-block-name="woocommerce/filled-cart-block" class="wp-block-woocommerce-filled-cart-block">
+<div data-block-name="woocommerce/cart-items-block" class="wp-block-woocommerce-cart-items-block">
+<div data-block-name="woocommerce/cart-line-items-block" class="wp-block-woocommerce-cart-line-items-block"></div>
+
+
+</div>
+
+
+
+<div data-block-name="woocommerce/cart-totals-block" class="wp-block-woocommerce-cart-totals-block">
+<div data-block-name="woocommerce/cart-order-summary-block" class="wp-block-woocommerce-cart-order-summary-block">
+<div data-block-name="woocommerce/cart-order-summary-heading-block" class="wp-block-woocommerce-cart-order-summary-heading-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-coupon-form-block" class="wp-block-woocommerce-cart-order-summary-coupon-form-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-totals-block" class="wp-block-woocommerce-cart-order-summary-totals-block">
+<div data-block-name="woocommerce/cart-order-summary-subtotal-block" class="wp-block-woocommerce-cart-order-summary-subtotal-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-fee-block" class="wp-block-woocommerce-cart-order-summary-fee-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-discount-block" class="wp-block-woocommerce-cart-order-summary-discount-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-shipping-block" class="wp-block-woocommerce-cart-order-summary-shipping-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-order-summary-taxes-block" class="wp-block-woocommerce-cart-order-summary-taxes-block"></div>
+</div>
+</div>
+
+
+
+<div data-block-name="woocommerce/cart-express-payment-block" class="wp-block-woocommerce-cart-express-payment-block"></div>
+
+
+
+<div data-block-name="woocommerce/proceed-to-checkout-block" class="wp-block-woocommerce-proceed-to-checkout-block"></div>
+
+
+
+<div data-block-name="woocommerce/cart-accepted-payment-methods-block" class="wp-block-woocommerce-cart-accepted-payment-methods-block"></div>
+</div>
+</div>
+
+
+
+<div data-block-name="woocommerce/empty-cart-block" class="wp-block-woocommerce-empty-cart-block">
+<h2 class="wp-block-heading has-text-align-center with-empty-cart-icon wc-block-cart__empty-cart__title">Your cart is currently empty!</h2>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity is-style-dots"/>
+
+
+
+<h2 class="wp-block-heading has-text-align-center">New in store</h2>
+
+
+<div data-block-name="woocommerce/product-new" data-columns="4" data-rows="1" class="wc-block-grid wp-block-product-new wp-block-woocommerce-product-new wc-block-product-new has-4-columns"><ul class="wc-block-grid__products"><li class="wc-block-grid__product">
+				<a href="http://woographql.local/product/shades-for-life/" class="wc-block-grid__product-link">
+					<div class="wc-block-grid__product-onsale">
+			<span aria-hidden="true">Sale</span>
+			<span class="screen-reader-text">Product on sale</span>
+		</div>
+					<div class="wc-block-grid__product-image"><img loading="lazy" decoding="async" width="300" height="300" src="http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses-green.png" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" alt="Shades for Life" srcset="http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses-green.png 6000w, http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses-green-600x600.png 600w" sizes="auto, (max-width: 300px) 100vw, 300px" /></div>
+					<div class="wc-block-grid__product-title">Shades for Life</div>
+				</a>
+				<div class="wc-block-grid__product-price price"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>20.00</span></del> <span class="screen-reader-text">Original price was: &#036;20.00.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>10.00</span></ins><span class="screen-reader-text">Current price is: &#036;10.00.</span> <span class="subscription-details"> / year</span></div>
+				
+				<div class="wp-block-button wc-block-grid__product-add-to-cart"><a href="/wp/index.php?marketing&#038;add-to-cart=367" aria-label="Add to cart: &ldquo;Shades for Life&rdquo;" data-quantity="1" data-product_id="367" data-product_sku="" data-price="10" rel="nofollow" class="wp-block-button__link wp-element-button add_to_cart_button ajax_add_to_cart">Add to cart</a></div>
+			</li><li class="wc-block-grid__product">
+				<a href="http://woographql.local/product/sporting-apparel-kit/" class="wc-block-grid__product-link">
+					<div class="wc-block-grid__product-onsale">
+			<span aria-hidden="true">Sale</span>
+			<span class="screen-reader-text">Product on sale</span>
+		</div>
+					<div class="wc-block-grid__product-image"><img loading="lazy" decoding="async" width="300" height="300" src="http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder.png" class="woocommerce-placeholder wp-post-image" alt="" srcset="http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder.png 1200w, http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder-300x300.png 300w, http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder-1024x1024.png 1024w, http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder-150x150.png 150w, http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder-768x768.png 768w, http://axistaylor.local/app/uploads/sites/4/woocommerce-placeholder-600x600.png 600w" sizes="auto, (max-width: 300px) 100vw, 300px" /></div>
+					<div class="wc-block-grid__product-title">Sporting Apparel Kit</div>
+				</a>
+				<div class="wc-block-grid__product-price price"><span class="from">From: </span><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>199.99</span></del> <span class="screen-reader-text">Original price was: &#036;199.99.</span><ins aria-hidden="true"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>169.99</span></ins><span class="screen-reader-text">Current price is: &#036;169.99.</span></div>
+				
+				<div class="wp-block-button wc-block-grid__product-add-to-cart"><a href="http://woographql.local/product/sporting-apparel-kit/" aria-label="Read more about &ldquo;Sporting Apparel Kit&rdquo;" data-quantity="1" data-product_id="366" data-product_sku="" data-price="0" rel="nofollow" class="wp-block-button__link wp-element-button add_to_cart_button">Select options</a></div>
+			</li><li class="wc-block-grid__product">
+				<a href="http://woographql.local/product/sunglasses-2/" class="wc-block-grid__product-link">
+					
+					<div class="wc-block-grid__product-image"><img loading="lazy" decoding="async" width="300" height="300" src="http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses.png" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" alt="Sunglasses" srcset="http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses.png 6000w, http://axistaylor.local/app/uploads/sites/4/2023/03/sunglasses-600x600.png 600w" sizes="auto, (max-width: 300px) 100vw, 300px" /></div>
+					<div class="wc-block-grid__product-title">Sunglasses</div>
+				</a>
+				<div class="wc-block-grid__product-price price"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>15.00</span></div>
+				
+				<div class="wp-block-button wc-block-grid__product-add-to-cart"><a href="/wp/index.php?marketing&#038;add-to-cart=365" aria-label="Add to cart: &ldquo;Sunglasses&rdquo;" data-quantity="1" data-product_id="365" data-product_sku="" data-price="15" rel="nofollow" class="wp-block-button__link wp-element-button add_to_cart_button ajax_add_to_cart">Add to cart</a></div>
+			</li><li class="wc-block-grid__product">
+				<a href="http://woographql.local/product/thermos/" class="wc-block-grid__product-link">
+					
+					<div class="wc-block-grid__product-image"><img loading="lazy" decoding="async" width="300" height="300" src="http://axistaylor.local/app/uploads/sites/4/2023/03/thermos.png" class="attachment-woocommerce_thumbnail size-woocommerce_thumbnail" alt="Thermos" srcset="http://axistaylor.local/app/uploads/sites/4/2023/03/thermos.png 3004w, http://axistaylor.local/app/uploads/sites/4/2023/03/thermos-600x600.png 600w" sizes="auto, (max-width: 300px) 100vw, 300px" /></div>
+					<div class="wc-block-grid__product-title">Thermos</div>
+				</a>
+				<div class="wc-block-grid__product-price price"><span class="woocommerce-Price-amount amount"><span class="woocommerce-Price-currencySymbol">&#036;</span>30.00</span></div>
+				
+				<div class="wp-block-button wc-block-grid__product-add-to-cart"><a href="/wp/index.php?marketing&#038;add-to-cart=364" aria-label="Add to cart: &ldquo;Thermos&rdquo;" data-quantity="1" data-product_id="364" data-product_sku="" data-price="30" rel="nofollow" class="wp-block-button__link wp-element-button add_to_cart_button ajax_add_to_cart">Add to cart</a></div>
+			</li></ul></div></div>
+</div>
+",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should render empty content 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should render nested HTML structures 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+        <div class="wrapper">
+          <h1>Title</h1>
+          <p>Paragraph 1</p>
+          <p>Paragraph 2</p>
+        </div>
+      ",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should render simple HTML content 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "<p>Hello World</p>",
+  },
+  "type": [Function],
+}
+`;
+
+exports[`Content snapshot testing should render void elements correctly 1`] = `
+{
+  "$$typeof": Symbol(react.transitional.element),
+  "_owner": null,
+  "_store": {},
+  "key": null,
+  "props": {
+    "content": "
+        <div>
+          <br />
+          <hr />
+          <img src="/test.jpg" alt="test" />
+        </div>
+      ",
+  },
+  "type": [Function],
+}
+`;

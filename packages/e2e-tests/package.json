@@ -1,15 +1,19 @@
 {
   "name": "e2e-tests",
+  "version": "0.0.1",
   "private": true,
-  "description": "E2E Tests for WPGraphQL Next Content Renderer",
-  "main": "index.js",
+  "description": "E2E Tests for NextPress using Playwright",
+  "type": "module",
   "devDependencies": {
-    "cypress": "^13.13.0",
-    "cypress-plugin-stripe-elements": "^1.0.2"
+    "@playwright/test": "^1.56.1"
   },
   "scripts": {
-    "cy:open": "cypress open --e2e -b chrome",
-    "cy:run": "cypress run --e2e -b chrome"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:codegen": "playwright codegen http://localhost:3000",
+    "report": "playwright show-report"
   },
   "author": "Geoff Taylor <support@axistaylor.com>"
 }

@@ -1,0 +1,71 @@
+name: JS Package Unit Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/js/**'
+      - '.github/workflows/js-unit-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/js/**'
+      - '.github/workflows/js-unit-tests.yml'
+
+jobs:
+  unit-tests:
+    name: Unit Tests (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build:js
+
+      - name: Run unit tests
+        run: npm run test:unit -- --coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == 20
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./packages/js/coverage/coverage-final.json
+          flags: js-unit-tests
+          fail_ci_if_error: false
+
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build:js
+
+      - name: Run type check
+        run: npm run typecheck

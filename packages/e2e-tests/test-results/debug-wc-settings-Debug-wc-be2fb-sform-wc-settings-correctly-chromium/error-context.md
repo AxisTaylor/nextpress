@@ -1,0 +1,79 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "NextPress E2E" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "Home" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "Shop" [ref=e7] [cursor=pointer]:
+          - /url: /shop
+        - link "Cart" [ref=e8] [cursor=pointer]:
+          - /url: /cart
+  - main [ref=e9]:
+    - generic [ref=e12]:
+      - heading "Your cart is currently empty!" [level=2] [ref=e13]
+      - separator [ref=e14]: ···
+      - heading "New in store" [level=2] [ref=e15]
+      - list [ref=e17]:
+        - listitem [ref=e18]:
+          - link "WordPress Pennant WordPress Pennant" [ref=e19] [cursor=pointer]:
+            - /url: /product/wordpress-pennant
+            - img "WordPress Pennant" [ref=e21]
+            - generic [ref=e22]: WordPress Pennant
+          - generic [ref=e24]: $11.05
+          - link "Buy on the WordPress swag store!" [ref=e26] [cursor=pointer]:
+            - /url: https://mercantile.wordpress.org/product/wordpress-pennant/
+        - listitem [ref=e27]:
+          - link "Product on sale Logo Collection Logo Collection" [ref=e28] [cursor=pointer]:
+            - /url: /product/logo-collection
+            - generic [ref=e29]:
+              - text: Sale
+              - generic [ref=e30]: Product on sale
+            - img "Logo Collection" [ref=e32]
+            - generic [ref=e33]: Logo Collection
+          - generic [ref=e34]:
+            - generic [ref=e35]: $18.00
+            - text: –
+            - generic [ref=e36]: $45.00
+            - generic [ref=e37]: "Price range: $18.00 through $45.00"
+          - link "View products in the “Logo Collection” group" [ref=e39] [cursor=pointer]:
+            - /url: /product/logo-collection
+            - text: View products
+        - listitem [ref=e40]:
+          - link "Product on sale Beanie with Logo Beanie with Logo" [ref=e41] [cursor=pointer]:
+            - /url: /product/beanie-with-logo
+            - generic [ref=e42]:
+              - text: Sale
+              - generic [ref=e43]: Product on sale
+            - img "Beanie with Logo" [ref=e45]
+            - generic [ref=e46]: Beanie with Logo
+          - generic [ref=e47]:
+            - deletion [ref=e48]:
+              - generic [ref=e49]: $20.00
+            - generic [ref=e50]: "Original price was: $20.00."
+            - insertion [ref=e51]:
+              - generic [ref=e52]: $18.00
+            - generic [ref=e53]: "Current price is: $18.00."
+          - 'link "Add to cart: “Beanie with Logo”" [ref=e55] [cursor=pointer]':
+            - /url: /wp/graphql?add-to-cart=83
+            - text: Add to cart
+        - listitem [ref=e56]:
+          - link "T-Shirt with Logo T-Shirt with Logo" [ref=e57] [cursor=pointer]:
+            - /url: /product/t-shirt-with-logo
+            - img "T-Shirt with Logo" [ref=e59]
+            - generic [ref=e60]: T-Shirt with Logo
+          - generic [ref=e62]: $18.00
+          - 'link "Add to cart: “T-Shirt with Logo”" [ref=e64] [cursor=pointer]':
+            - /url: /wp/graphql?add-to-cart=82
+            - text: Add to cart
+  - contentinfo [ref=e65]:
+    - paragraph [ref=e67]: NextPress E2E Test Application
+  - button "Open Next.js Dev Tools" [ref=e73] [cursor=pointer]:
+    - img [ref=e74]
+  - alert [ref=e77]
+  - status [ref=e80]
+```

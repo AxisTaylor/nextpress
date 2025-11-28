@@ -1,0 +1,52 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/js/**'
+      - 'packages/nextjs-example/**'
+      - 'lighthouserc.js'
+      - '.github/workflows/lighthouse.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/js/**'
+      - 'packages/nextjs-example/**'
+      - 'lighthouserc.js'
+      - '.github/workflows/lighthouse.yml'
+
+jobs:
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build JS package
+        run: npm run build:js
+
+      - name: Run Lighthouse CI
+        run: npm run lighthouse
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          retention-days: 30

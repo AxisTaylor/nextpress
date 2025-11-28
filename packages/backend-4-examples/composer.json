@@ -25,7 +25,6 @@
     "roots/bedrock-disallow-indexing": "^2.0",
     "roots/wordpress": "*",
     "roots/wp-config": "1.0.0",
-    "roots/wp-password-bcrypt": "1.1.0",
     "vlucas/phpdotenv": "^5.5",
     "wp-graphql/wp-graphql-jwt-authentication": "*",
     "wp-graphql/wp-graphql-woocommerce": "*",
@@ -34,7 +33,9 @@
     "wpackagist-plugin/woocommerce": "*",
     "wpackagist-plugin/woocommerce-gateway-stripe": "*",
     "wpackagist-plugin/wp-graphql": "*",
-    "wpackagist-theme/twentytwentyfour": "^1.0"
+    "wpackagist-theme/twentytwentyfour": "*",
+    "wpackagist-theme/twentytwentyfive": "*",
+    "wpackagist-plugin/health-endpoint": "*"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.7.1",
@@ -65,8 +66,6 @@
     ],
     "test": [
       "phpcs"
-    ],
-    "pull-prod-db": "bin/pull-prod-db.sh",
-    "pull-uploads-dir": "bin/pull-uploads-dir.sh"
+    ]
   }
 }

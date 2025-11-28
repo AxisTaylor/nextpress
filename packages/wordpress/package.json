@@ -1,13 +1,22 @@
 {
-  "name": "wordpress",
+  "name": "@axistaylor/nextpress-wordpress",
   "version": "1.0.0",
-  "main": "index.js",
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
+  "private": true,
+  "description": "A WPGraphQL extension. Adds the queries needed to render WP content on a 1:1 scale in a headless environment.",
   "author": "Geoff Taylor",
   "license": "GPL-3.0-or-later",
-  "description": "A WPGraphQL extension. Adds the queries needed to render WP content on a 1:1 scale in a headless environment."
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@wordpress/api-fetch": "^7.0.0"
+  }
 }

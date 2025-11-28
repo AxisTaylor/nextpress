@@ -1,63 +1,45 @@
-import React from 'react';
-import parse, {
-  DOMNode,
-  domToReact,
-  HTMLReactParserOptions,
-  Element,
-  attributesToProps,
-} from 'html-react-parser';
+import React, { FC } from 'react';
+import { getWPInstance } from '@/config/getWPInstance';
+import { parseHtml, CustomParser } from '@/utils/parseHtml';
+import { createUrlRewritingParser } from '@/parsers/urlRewritingParser';
 
-export default function parseHtml(
-  html: string,
-  customParser?: (node: DOMNode, props: any, children?: DOMNode[]|DOMNode) => JSX.Element
-) {
-  const options: HTMLReactParserOptions = {
-    replace(node) {
-      const { name, attribs, children } = node as Element;
-      if (!name) {
-        return undefined;
-      }
-      
-      const Component = name as keyof JSX.IntrinsicElements;
-      const props = attributesToProps(attribs);
-
-      if (name === 'a' && !props.href) {
-        return (
-          <a {...props}>
-            {children && domToReact(children as Element[], options)}
-          </a>
-        );
-      }
-
-      const voidElements = ['br', 'hr', 'input', 'img', 'link', 'meta'];
-      if (voidElements.includes(name)) {
-        return (<Component {...props} />);
-      }
-
-      if (customParser) {
-        const result = customParser(node, props, children as Element[]);
-        if (result) {
-          return result;
-        }
-      }
-
-      // If nothing special render it as normal.
-      return (
-        <Component {...props}>
-          {children && domToReact(children as Element[], options)}
-        </Component>
-      );
-    },
-  };
-
-  return parse(html, options as HTMLReactParserOptions);
-}
 
 export interface ContentProps {
   content: string;
-  customParser?: (node: DOMNode, props: any, children?: DOMNode[]|DOMNode) => JSX.Element
+  instance?: string;
+  parser?: CustomParser;
+  linksAs?: FC<JSX.IntrinsicElements['a']>
 }
 
-export function Content({ content, customParser }: ContentProps) {
-  return (<>{parseHtml(content, customParser)}</>);
+/**
+ * Fixes invalid HTML structures commonly output by WordPress/WooCommerce.
+ * Specifically fixes tables with <tr> directly under <table> by wrapping in <tbody>.
+ */
+function fixInvalidHtml(html: string): string {
+  // Fix tables missing tbody wrapper
+  // Matches: <table...><tr or <table...>\s*<tr
+  // Replaces with: <table...><tbody><tr
+  return html.replace(
+    /(<table[^>]*>)(\s*)(<tr[\s>])/gi,
+    '$1$2<tbody>$3'
+  ).replace(
+    /(<\/table>)/gi,
+    '</tbody>$1'
+  );
+}
+
+export function Content({ content, parser, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']> }: ContentProps) {
+  const fixedContent = fixInvalidHtml(content);
+
+  // Check if formatPermalinks is enabled (defaults to true)
+  const formatPermalinks = process.env.NEXTPRESS_FORMAT_PERMALINKS !== 'false';
+
+  // Get URL rewriting parser if formatPermalinks is enabled
+  let urlRewritingParser: CustomParser | undefined;
+  if (formatPermalinks) {
+    const { wpHomeUrl, wpSiteUrl } = getWPInstance(instance);
+    urlRewritingParser = createUrlRewritingParser(wpHomeUrl, wpSiteUrl, linksAs);
+  }
+
+  return (<div>{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
 }
