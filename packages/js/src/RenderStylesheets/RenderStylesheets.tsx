@@ -2,13 +2,9 @@ import React, {
   Fragment,
   FC,
   ReactNode,
-  useInsertionEffect,
-  useEffect,
-  useState,
 } from 'react';
 
 import { EnqueuedStylesheet } from "@/types";
-import { escapeRegExp } from 'lodash';
 
 export interface StyleProps {
   id?: string;
@@ -21,62 +17,57 @@ const Style = 'style' as unknown as FC<StyleProps>;
 
 type RenderStylesheetsProps = {
   stylesheets: EnqueuedStylesheet[];
+  instance?: string;
 };
 
-function createLinkElement(href: string, id?: string, precedence?: 'low'|'medium'|'high') {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  link.id = id || '';
-  link.dataset.precedence = precedence || 'medium';
-  return link;
+/**
+ * Extracts the path from a URL, removing the protocol and domain
+ */
+function extractPath(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.pathname;
+  } catch {
+    // If URL parsing fails, assume it's already a path
+    return url;
+  }
 }
 
-let isInserted = new Set();
-export function RenderStylesheets({ stylesheets }: RenderStylesheetsProps) {
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+export function RenderStylesheets({ stylesheets, instance = 'default' }: RenderStylesheetsProps) {
+  const isInternalRoute = /^\/wp-(?:includes|admin)\//;
 
-  useInsertionEffect(() => {
-    if (!isMounted) {
-      return;
-    }
-
-    stylesheets.map(({ src, handle }) => {
-      if (src && !isInserted.has(handle)) {
-        const href = src?.replace(
-          new RegExp(`^((?:http(s)?:\/\/|\/\/)${escapeRegExp(process.env.wcr_wp_domain)})?\/(.*)$`),
-          `${process.env.wcr_frontend_url}/api/wp-assets/$3`,
-        ) || '';
-
-        isInserted.add(handle);
-        document.head.appendChild(createLinkElement(href));
-      }
-    });
-  }, [isMounted]);
-
-  if (!isMounted) {
-    return null;
-  }
-  
   return (
     <Fragment>
       {stylesheets.map((stylesheet) => {
-        const { handle } = stylesheet;
-        const src = stylesheet.src?.startsWith('/')
-          ? `${process.env.wcr_wp_siteurl}${stylesheet.src}`
-          : stylesheet.src;
+        const { handle, src } = stylesheet;
+
+        // Determine the correct href for the stylesheet
+        let href = '';
+        if (src) {
+          // Extract path from full URL if needed
+          const path = extractPath(src);
+
+          if (isInternalRoute.test(path)) {
+            // Internal WordPress path (e.g., /wp-includes/css/... or /wp-admin/css/...)
+            href = `/atx/${instance}/wp-internal-assets${path}`;
+          } else {
+            // WordPress content path (e.g., /wp-content/...)
+            href = `/atx/${instance}/wp-assets${path}`;
+          }
+        }
+        const Link = 'link' as unknown as FC<JSX.IntrinsicElements['link'] & { precedence: string }>;
         return (
           <Fragment key={handle}>
             {stylesheet.before && (
-              <Style id={`${handle}-before`} data-precedence="low" data-href={src}>
+              <Style id={`${handle}-before`} precedence="low" href={href || undefined}>
                 {stylesheet.before.join('')}
               </Style>
             )}
+            {href && (
+              <Link rel="stylesheet" href={href} id={handle as string} precedence="medium" />
+            )}
             {stylesheet.after && (
-              <Style id={`${handle}-after`} precedence="high" href={src as string}>
+              <Style id={`${handle}-after`} precedence="high" href={href || undefined}>
                 {stylesheet.after.join('')}
               </Style>
             )}

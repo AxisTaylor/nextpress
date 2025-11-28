@@ -9,14 +9,22 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: not-so-secure
+    healthcheck:
+      test: ["CMD", "mysql", "-uwordpress", "-pnot-so-secure", "wordpress", "-e", "SELECT 1 FROM wp_options LIMIT 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
 
   memcached:
     image: memcached:1.5
 
   php:
     depends_on:
-      - db
-      - memcached
+      db:
+        condition: service_healthy
+      memcached:
+        condition: service_started
     ports:
       - "8080:8080"
     image: bitpoke/wordpress-runtime:bedrock-php-8.1

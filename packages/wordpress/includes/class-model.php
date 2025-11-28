@@ -65,6 +65,11 @@ class Model extends Base {
 		$promise = $context->node_resolver->resolve_uri( $this->path );
 		\GraphQL\Deferred::runQueue();
 
+		// Check if promise is null (URI doesn't resolve to any content)
+		if ( null === $promise ) {
+			throw new UserError( sprintf( 'No content found for URI: %s', $uri ) );
+		}
+
 		$this->data = $promise->result;
 
 		$allowed_restricted_fields = [
@@ -125,7 +130,7 @@ class Model extends Base {
 		}
 
 		if ( self::all_dependencies_in_footer( $script ) ) {
-			return 0;
+			return 1;
 		}
 
 		return absint( $script->extra['group'] );

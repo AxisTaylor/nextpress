@@ -1,2 +1,4 @@
 export * from '@/types';
-export * from '@/RenderStylesheets';
+export * from '@/HeadScripts';
+export * from '@/BodyScripts';
+export * from '@/ScriptLoader';

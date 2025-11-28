@@ -1,5 +1,28 @@
 # Build
-
 node_modules/
-.DS_Store
+vendor/
+dist/
 *.tgz
+
+# OS
+.DS_Store
+
+# Environment
+.env
+!.env.example
+!packages/backend-4-examples/.env
+
+# Test output
+**/test-results/
+**/playwright-report/
+**/test-output.log
+**/.phpunit.result.cache
+**/tests/_wordpress/
+**/tests/_plugins/
+
+# IDE
+.lighthouseci/
+
+# Claude
+.claude/
+CLAUDE.md
