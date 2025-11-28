@@ -1,6 +1,6 @@
 {
   "name": "@axistaylor/nextpress",
-  "version": "2.0.0",
+  "version": "0.0.1",
   "description": "Render WordPress Gutenberg content 1:1 in Next.js. Automatic script/stylesheet loading, middleware proxy, and multi-WordPress support.",
   "keywords": [
     "wordpress",

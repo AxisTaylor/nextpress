@@ -16,7 +16,6 @@
     "build:js": "npm run build -w ./packages/js",
     "build:wordpress": "npm run build -w ./packages/wordpress",
     "update-demo-plugins": "npm run update-plugins -w ./packages/backend-4-examples",
-    "prepare": "npm run build",
     "dev:package": "npm run build:watch -w ./packages/js",
     "dev:wp-backend": "npm run start -w ./packages/backend-4-examples",
     "dev:wp-frontend": "npm run dev -w ./packages/nextjs-example",

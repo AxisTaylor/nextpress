@@ -8,7 +8,7 @@ This guide walks you through setting up NextPress to render WordPress content in
 - Next.js 14.2.5+ (or Next.js 16+ for proxy.ts)
 - WordPress site with:
   - [WPGraphQL](https://www.wpgraphql.com/) plugin
-  - [NextPress WordPress plugin](https://packagist.org/packages/axistaylor/nextpress)
+  - [NextPress WordPress plugin](./wordpress-plugin.md)
 
 ## Installation
 

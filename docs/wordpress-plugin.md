@@ -12,8 +12,23 @@ The NextPress WordPress plugin extends WPGraphQL to expose enqueued scripts and 
 
 ### Via Composer
 
+Add the GitHub repository to your `composer.json`:
+
+```json
+{
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/AxisTaylor/nextpress.git"
+    }
+  ]
+}
+```
+
+Then require the package:
+
 ```bash
-composer require axistaylor/nextpress
+composer require axistaylor/nextpress:dev-main
 ```
 
 ### Manual Installation

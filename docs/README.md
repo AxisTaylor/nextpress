@@ -25,4 +25,4 @@ A comprehensive toolkit for rendering WordPress Gutenberg content 1:1 in Next.js
 
 - [npm package](https://www.npmjs.com/package/@axistaylor/nextpress)
 - [GitHub repository](https://github.com/axistaylor/nextpress)
-- [WordPress plugin](https://packagist.org/packages/axistaylor/nextpress)
+- [WordPress plugin](./wordpress-plugin.md)
