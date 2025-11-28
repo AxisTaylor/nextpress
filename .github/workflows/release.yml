@@ -45,7 +45,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create WordPress plugin tag
-        if: steps.changesets.outputs.published == 'true'
+        if: steps.changesets.outputs.published == 'true' || steps.changesets.outputs.hasChangesets == 'false'
         run: |
           # Extract version from WordPress package.json (managed by changesets)
           VERSION=$(node -p "require('./packages/wordpress/package.json').version")
