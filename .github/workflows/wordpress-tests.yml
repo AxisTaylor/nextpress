@@ -69,6 +69,12 @@ jobs:
         working-directory: packages/wordpress
         run: composer install --prefer-dist --no-progress
 
+      - name: Link ChromeDriver to vendor/bin
+        working-directory: packages/wordpress
+        run: |
+          mkdir -p vendor/bin
+          ln -sf $(which chromedriver) vendor/bin/chromedriver
+
       - name: Install test environment
         working-directory: packages/wordpress
         run: |
