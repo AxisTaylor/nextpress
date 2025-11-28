@@ -39,6 +39,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Setup ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Start ChromeDriver (if needed)
+        run: |
+          # This command starts the chromedriver in the background
+          chromedriver --port=4444 &
+
       - name: Setup PHP ${{ matrix.php-version }}
         uses: shivammathur/setup-php@v2
         with:
