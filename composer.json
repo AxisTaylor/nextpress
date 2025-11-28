@@ -1,0 +1,31 @@
+{
+    "name": "axistaylor/nextpress",
+    "description": "Render WordPress Gutenberg content 1:1 in Next.js. Extends WPGraphQL with enqueued asset queries for headless WordPress implementations.",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "wordpress",
+        "wpgraphql",
+        "nextjs",
+        "headless",
+        "gutenberg"
+    ],
+    "homepage": "https://github.com/axistaylor/nextpress",
+    "authors": [
+        {
+            "name": "AxisTaylor, LLC",
+            "email": "support@axistaylor.com",
+            "homepage": "https://axistaylor.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/axistaylor/nextpress/issues",
+        "source": "https://github.com/axistaylor/nextpress"
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "extra": {
+        "installer-name": "nextpress"
+    }
+}
