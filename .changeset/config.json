@@ -15,6 +15,6 @@
   "ignore": [
     "backend-4-examples",
     "e2e-tests",
-    "example-01"
+    "nextjs-example"
   ]
 }
