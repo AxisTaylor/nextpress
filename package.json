@@ -35,7 +35,7 @@
     "save-wp-db": "npm run save-db -w ./packages/backend-4-examples",
     "lighthouse": "lhci autorun",
     "changeset": "changeset",
-    "changeset:version": "changeset version",
+    "changeset:version": "changeset version && ts-node scripts/sync-wp-version.ts",
     "changeset:publish": "changeset publish",
     "release": "npm run build && changeset publish"
   },

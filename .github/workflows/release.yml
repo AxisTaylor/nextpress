@@ -39,3 +39,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create WordPress plugin tag
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          # Extract version from WordPress package.json (managed by changesets)
+          VERSION=$(node -p "require('./packages/wordpress/package.json').version")
+          TAG_NAME="wp-v${VERSION}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists, skipping"
+          else
+            echo "Creating tag $TAG_NAME"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag "$TAG_NAME"
+            git push origin "$TAG_NAME"
+          fi
