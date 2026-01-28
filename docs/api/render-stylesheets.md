@@ -1,3 +1,10 @@
+<!--
+title: "RenderStylesheets Component"
+description: "Render WordPress stylesheets with dependency ordering, inline styles, and media query support."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, RenderStylesheets, WordPress, CSS, stylesheets, Next.js"
+-->
+
 # RenderStylesheets
 
 The `RenderStylesheets` component renders WordPress stylesheets with proper dependency ordering, inline styles, and media query support.
@@ -166,4 +173,4 @@ import type { EnqueuedStylesheet } from '@axistaylor/nextpress';
 
 - [HeadScripts](./head-scripts.md) - Header script loading
 - [BodyScripts](./body-scripts.md) - Footer script loading
-- [Getting Started](./getting-started.md) - Initial setup
+- [Getting Started](../getting-started.md) - Initial setup

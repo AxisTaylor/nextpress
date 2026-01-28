@@ -40,6 +40,10 @@ class Assets {
 
 		// Transform WooCommerce return URL (order-received page) for headless
 		add_filter( 'woocommerce_get_return_url', array( $this, 'transform_return_url' ), 10, 2 );
+
+		// Allow WC block scripts to enqueue during asset simulation
+		add_action( 'nextpress_pre_simulate_render', array( $this, 'disable_wc_rest_api_filter_for_simulation' ) );
+		add_action( 'nextpress_post_simulate_render', array( $this, 'restore_wc_rest_api_filter_after_simulation' ) );
 	}
 
 	/**
@@ -446,5 +450,33 @@ class Assets {
 
 		// Return relative path (browser will use current origin)
 		return $path . $query;
+	}
+
+	public function disable_wc_rest_api_filter_for_simulation() {
+		$settings   = get_option( 'nextpress_headless_settings', array() );
+		$is_enabled = isset( $settings['enable_custom_wc_scripts'] )
+			&& $settings['enable_custom_wc_scripts'] === 'on';
+
+		if ( ! $is_enabled ) {
+			return;
+		}
+
+		remove_filter( 'woocommerce_is_rest_api_request', '__return_true' );
+		add_filter( 'woocommerce_is_rest_api_request', '__return_false', 999 );
+	}
+
+	public function restore_wc_rest_api_filter_after_simulation() {
+		$settings   = get_option( 'nextpress_headless_settings', array() );
+		$is_enabled = isset( $settings['enable_custom_wc_scripts'] )
+			&& $settings['enable_custom_wc_scripts'] === 'on';
+
+		if ( ! $is_enabled ) {
+			return;
+		}
+
+		remove_filter( 'woocommerce_is_rest_api_request', '__return_false', 999 );
+		if ( function_exists( 'is_graphql_http_request' ) && is_graphql_http_request() ) {
+			add_filter( 'woocommerce_is_rest_api_request', '__return_true' );
+		}
 	}
 }

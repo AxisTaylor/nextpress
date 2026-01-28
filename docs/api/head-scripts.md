@@ -1,3 +1,10 @@
+<!--
+title: "HeadScripts Component"
+description: "Render WordPress header scripts with dependency resolution, loading strategies, and inline script support."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, HeadScripts, WordPress, scripts, dependency resolution, Next.js"
+-->
+
 # HeadScripts
 
 The `HeadScripts` component renders WordPress header scripts with proper dependency resolution, loading strategies, and inline script support.
@@ -222,4 +229,4 @@ import type { EnqueuedScript } from '@axistaylor/nextpress';
 - [BodyScripts](./body-scripts.md) - Footer script loading
 - [RenderStylesheets](./render-stylesheets.md) - Stylesheet loading
 - [proxyByWCR](./proxy-by-wcr.md) - Proxy configuration
-- [Getting Started](./getting-started.md) - Initial setup
+- [Getting Started](../getting-started.md) - Initial setup

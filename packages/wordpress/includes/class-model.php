@@ -284,6 +284,8 @@ class Model extends Base {
 				'enqueuedScriptsQueue'     => function () {
 					global $wp_scripts;
 
+					do_action( 'nextpress_pre_simulate_render' );
+
 					// Simulate WP template rendering.
 					ob_start();
 					do_action( 'wp_head' );
@@ -298,6 +300,8 @@ class Model extends Base {
 					do_action( 'wp_footer' );
 					ob_get_clean();
 
+					do_action( 'nextpress_post_simulate_render' );
+
 					// Sort and organize the enqueued scripts.
 					$queue = $this->flatten_enqueued_assets_list( $wp_scripts->queue ?? [], $wp_scripts );
 
@@ -309,6 +313,8 @@ class Model extends Base {
 				},
 				'enqueuedStylesheetsQueue' => function () {
 					global $wp_styles;
+
+					do_action( 'nextpress_pre_simulate_render' );
 
 					// Simulate WP template rendering.
 					ob_start();
@@ -323,6 +329,8 @@ class Model extends Base {
 					do_action( 'get_sidebar', null, [] );
 					wp_footer();
 					ob_get_clean();
+
+					do_action( 'nextpress_post_simulate_render' );
 
 					// Sort and organize the enqueued stylesheets.
 					$queue = $this->flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );

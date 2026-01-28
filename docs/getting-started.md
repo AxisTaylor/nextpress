@@ -1,3 +1,10 @@
+<!--
+title: "Getting Started with NextPress"
+description: "Step-by-step guide to setting up NextPress for rendering WordPress content in your Next.js application."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, Next.js, WordPress, setup, installation, WPGraphQL, headless CMS"
+-->
+
 # Getting Started
 
 This guide walks you through setting up NextPress to render WordPress content in your Next.js application.

@@ -1,3 +1,10 @@
+<!--
+title: "NextPress WordPress Plugin"
+description: "WordPress plugin that extends WPGraphQL to expose enqueued scripts and stylesheets for Next.js frontends."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, WordPress plugin, WPGraphQL, scripts, stylesheets, Next.js"
+-->
+
 # NextPress WordPress Plugin
 
 The NextPress WordPress plugin extends WPGraphQL to expose enqueued scripts and stylesheets, enabling your Next.js frontend to load WordPress assets correctly.

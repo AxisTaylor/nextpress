@@ -1,3 +1,10 @@
+<!--
+title: "Multi-WordPress Setup"
+description: "Connect to multiple WordPress backends from a single Next.js application for microservices, multi-tenant, and migration scenarios."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, multi-WordPress, multiple backends, microservices, multi-tenant, Next.js"
+-->
+
 # Multi-WordPress Setup
 
 NextPress supports connecting to multiple WordPress backends from a single Next.js application. This is useful for:
