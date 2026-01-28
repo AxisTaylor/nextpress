@@ -1,3 +1,10 @@
+<!--
+title: "Content Component"
+description: "Render WordPress HTML content in React with automatic Gutenberg block handling and custom parsers."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, Content component, WordPress, Gutenberg, HTML rendering, React"
+-->
+
 # Content Component
 
 The `Content` component renders WordPress HTML content in React, automatically handling Gutenberg blocks, HTML entities, and table structures.
@@ -240,7 +247,7 @@ When using multiple WordPress backends, specify the instance:
 <Content content={content} instance="blog" />
 ```
 
-See [Multi-WordPress Setup](./multi-wordpress.md) for configuration details.
+See [Multi-WordPress Setup](../multi-wordpress.md) for configuration details.
 
 ## TypeScript
 
@@ -253,6 +260,6 @@ import type { HTMLReactParserProps } from 'html-react-parser';
 
 ## Related
 
-- [Getting Started](./getting-started.md) - Initial setup
+- [Getting Started](../getting-started.md) - Initial setup
 - [HeadScripts](./head-scripts.md) - Loading WordPress scripts
 - [RenderStylesheets](./render-stylesheets.md) - Loading WordPress styles

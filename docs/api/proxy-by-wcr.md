@@ -1,3 +1,10 @@
+<!--
+title: "proxyByWCR Middleware"
+description: "Middleware function that proxies requests to WordPress backends for REST API, AJAX, WooCommerce, and asset requests."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, proxyByWCR, middleware, WordPress, proxy, REST API, Next.js"
+-->
+
 # proxyByWCR
 
 `proxyByWCR` is a middleware function that proxies requests to WordPress backends. It handles REST API calls, AJAX requests, WooCommerce endpoints, and asset requests.
@@ -248,5 +255,5 @@ Ensure Cart-Token handling is implemented (see WooCommerce section above).
 
 - [withWCR](./with-wcr.md) - Next.js configuration
 - [HeadScripts](./head-scripts.md) - URI retrieval in layouts
-- [Multi-WordPress Setup](./multi-wordpress.md) - Multiple backends
-- [Troubleshooting](./troubleshooting.md) - Common issues
+- [Multi-WordPress Setup](../multi-wordpress.md) - Multiple backends
+- [Troubleshooting](../troubleshooting.md) - Common issues

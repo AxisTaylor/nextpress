@@ -1,3 +1,10 @@
+<!--
+title: "BodyScripts Component"
+description: "Render WordPress footer scripts with dependency resolution, loading strategies, and inline script support."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, BodyScripts, WordPress, scripts, footer scripts, Next.js"
+-->
+
 # BodyScripts
 
 The `BodyScripts` component renders WordPress footer scripts with proper dependency resolution, loading strategies, and inline script support.
@@ -155,4 +162,4 @@ import type { EnqueuedScript } from '@axistaylor/nextpress';
 
 - [HeadScripts](./head-scripts.md) - Header script loading and URI retrieval
 - [RenderStylesheets](./render-stylesheets.md) - Stylesheet loading
-- [Getting Started](./getting-started.md) - Initial setup
+- [Getting Started](../getting-started.md) - Initial setup

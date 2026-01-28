@@ -1,3 +1,10 @@
+<!--
+title: "withWCR Configuration Wrapper"
+description: "Next.js configuration wrapper that sets up WordPress connection, API redirects, and environment variables."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, withWCR, Next.js config, WordPress, configuration, environment variables"
+-->
+
 # withWCR
 
 `withWCR` is a Next.js configuration wrapper that sets up WordPress connection, generates API redirects, and configures environment variables.
@@ -71,7 +78,7 @@ export default withWCR(nextConfig, {
 });
 ```
 
-See [Multi-WordPress Setup](./multi-wordpress.md) for complete documentation.
+See [Multi-WordPress Setup](../multi-wordpress.md) for complete documentation.
 
 ## What withWCR Does
 
@@ -188,5 +195,5 @@ export default withWCR(nextConfig, {
 ## Related
 
 - [proxyByWCR](./proxy-by-wcr.md) - Middleware proxy setup
-- [Multi-WordPress Setup](./multi-wordpress.md) - Multiple backends
-- [Getting Started](./getting-started.md) - Initial setup
+- [Multi-WordPress Setup](../multi-wordpress.md) - Multiple backends
+- [Getting Started](../getting-started.md) - Initial setup

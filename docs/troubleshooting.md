@@ -1,3 +1,10 @@
+<!--
+title: "Troubleshooting"
+description: "Common issues and solutions when using NextPress for WordPress content rendering in Next.js."
+author: "AxisTaylor, LLC"
+keywords: "NextPress, troubleshooting, debugging, issues, solutions, Next.js, WordPress"
+-->
+
 # Troubleshooting
 
 Common issues and solutions when using NextPress.
