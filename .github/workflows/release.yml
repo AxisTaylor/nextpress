@@ -42,7 +42,6 @@ jobs:
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ''
 
       - name: Create WordPress plugin tag
         id: wp-tag
