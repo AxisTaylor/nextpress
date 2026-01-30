@@ -36,7 +36,7 @@ jobs:
         run: npm ci
 
       - name: Build JS package
-        run: npm run build:js
+        run: npm run build
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

@@ -27,7 +27,7 @@
     "roots/wp-config": "1.0.0",
     "vlucas/phpdotenv": "^5.5",
     "wp-graphql/wp-graphql-jwt-authentication": "*",
-    "wp-graphql/wp-graphql-woocommerce": "*",
+    "wp-graphql/wp-graphql-woocommerce": "dev-develop",
     "wpackagist-plugin/code-snippets": "*",
     "wpackagist-plugin/query-monitor": "*",
     "wpackagist-plugin/woocommerce": "*",

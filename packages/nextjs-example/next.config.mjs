@@ -5,6 +5,7 @@ import { withWCR } from '@axistaylor/nextpress/withWCR';
  */
 const nextConfig = {
   images: {
+    dangerouslyAllowLocalIP: true,
     dangerouslyAllowSVG: true,
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

@@ -26,7 +26,7 @@ test.describe('RenderStylesheets RSC', () => {
 
     // Verify at least some WordPress stylesheets are present
     const hasWordPressStyles = hrefs.some(href =>
-      href.includes('/api/') || href.includes('wp-') || href.includes('wordpress')
+      href.includes('/atx/') || href.includes('wp-') || href.includes('wordpress')
     );
     expect(hasWordPressStyles).toBeTruthy();
   });
@@ -54,14 +54,14 @@ test.describe('RenderStylesheets RSC', () => {
     const wpStylesheets = hrefs.filter(href =>
       href.includes('wp-') ||
       href.includes('wordpress') ||
-      href.includes('/api/')
+      href.includes('/atx/')
     );
 
     // If there are WordPress stylesheets, verify they're proxied
     if (wpStylesheets.length > 0) {
       wpStylesheets.forEach(href => {
-        // Should be proxied through /api/[instance]/wp-assets/ or wp-internal-assets/
-        const isProxied = href.includes('/api/') &&
+        // Should be proxied through /atx/[instance]/wp-assets/ or wp-internal-assets/
+        const isProxied = href.includes('/atx/') &&
                          (href.includes('/wp-assets/') || href.includes('/wp-internal-assets/'));
 
         // Should not point directly to WordPress domain
@@ -172,7 +172,7 @@ test.describe('HeadScripts & BodyScripts RSC', () => {
 
       // The API root should point to our proxy, not directly to WordPress
       if (apiFetchRoot) {
-        expect(apiFetchRoot).toContain('/api/');
+        expect(apiFetchRoot).toContain('/atx/');
       }
     }
   });

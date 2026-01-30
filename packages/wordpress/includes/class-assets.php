@@ -38,6 +38,9 @@ class Assets {
 		add_filter( 'wc_stripe_express_checkout_params', array( $this, 'transform_stripe_express_checkout_params' ) );
 		add_filter( 'wc_stripe_upe_params', array( $this, 'transform_stripe_express_checkout_params' ) );
 
+		// Transform WC AJAX endpoint URLs to use the WC proxy route
+		add_filter( 'woocommerce_ajax_get_endpoint', array( $this, 'transform_wc_ajax_endpoint' ), 10, 2 );
+
 		// Transform WooCommerce return URL (order-received page) for headless
 		add_filter( 'woocommerce_get_return_url', array( $this, 'transform_return_url' ), 10, 2 );
 
@@ -306,6 +309,25 @@ class Assets {
 			&& $settings['enable_custom_wc_scripts'] === 'on';
 
 		return $is_enabled;
+	}
+
+	/**
+	 * Transform WC AJAX endpoint URLs to use the WC proxy route.
+	 *
+	 * WC_AJAX::get_endpoint() appends ?wc-ajax= after home_url() returns,
+	 * so the home_url filter never sees the wc-ajax param. This filter
+	 * rewrites __NEXTPRESS_PROXY__ to __NEXTPRESS_ASSETS__/wc for routing.
+	 *
+	 * @param string $url     The WC AJAX endpoint URL.
+	 * @param string $request The AJAX request name.
+	 * @return string Transformed URL.
+	 */
+	public function transform_wc_ajax_endpoint( $url, $request ) {
+		if ( strpos( $url, '__NEXTPRESS_PROXY__' ) === false ) {
+			return $url;
+		}
+
+		return str_replace( '__NEXTPRESS_PROXY__/', '__NEXTPRESS_ASSETS__/wc', $url );
 	}
 
 	/**

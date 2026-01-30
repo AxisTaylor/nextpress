@@ -22,7 +22,7 @@ test.describe('Home Page Proxy', () => {
       const url = response.url();
 
       // Track proxy requests
-      if (url.includes('/api/default/')) {
+      if (url.includes('/atx/default/')) {
         proxyRequests.push({
           url,
           status: response.status(),
@@ -40,7 +40,7 @@ test.describe('Home Page Proxy', () => {
     });
 
     page.on('requestfailed', request => {
-      if (request.url().includes('/api/default/')) {
+      if (request.url().includes('/atx/default/')) {
         failedRequests.push({
           url: request.url(),
           status: null,
@@ -70,7 +70,7 @@ test.describe('Home Page Proxy', () => {
 
     page.on('response', response => {
       const url = response.url();
-      if (url.includes('/api/default/wp-internal-assets/')) {
+      if (url.includes('/atx/default/wp-internal-assets/')) {
         internalAssets.push({
           url,
           status: response.status(),
@@ -100,7 +100,7 @@ test.describe('Home Page Proxy', () => {
 
     page.on('response', response => {
       const url = response.url();
-      if (url.includes('/api/default/wp-assets/')) {
+      if (url.includes('/atx/default/wp-assets/')) {
         contentAssets.push({
           url,
           status: response.status(),
@@ -134,7 +134,7 @@ test.describe('Shop Page Proxy', () => {
     page.on('response', response => {
       const url = response.url();
 
-      if (url.includes('/api/default/')) {
+      if (url.includes('/atx/default/')) {
         proxyRequests.push({
           url,
           status: response.status(),
@@ -151,7 +151,7 @@ test.describe('Shop Page Proxy', () => {
     });
 
     page.on('requestfailed', request => {
-      if (request.url().includes('/api/default/')) {
+      if (request.url().includes('/atx/default/')) {
         failedRequests.push({
           url: request.url(),
           status: null,
@@ -182,7 +182,7 @@ test.describe('Product Page Proxy', () => {
     page.on('response', response => {
       const url = response.url();
 
-      if (url.includes('/api/default/')) {
+      if (url.includes('/atx/default/')) {
         proxyRequests.push({
           url,
           status: response.status(),
@@ -199,7 +199,7 @@ test.describe('Product Page Proxy', () => {
     });
 
     page.on('requestfailed', request => {
-      if (request.url().includes('/api/default/')) {
+      if (request.url().includes('/atx/default/')) {
         failedRequests.push({
           url: request.url(),
           status: null,
@@ -242,7 +242,7 @@ test.describe('Cart Page Proxy', () => {
     page.on('response', response => {
       const url = response.url();
 
-      if (url.includes('/api/default/')) {
+      if (url.includes('/atx/default/')) {
         proxyRequests.push({
           url,
           status: response.status(),
@@ -259,7 +259,7 @@ test.describe('Cart Page Proxy', () => {
     });
 
     page.on('requestfailed', request => {
-      if (request.url().includes('/api/default/')) {
+      if (request.url().includes('/atx/default/')) {
         failedRequests.push({
           url: request.url(),
           status: null,
@@ -292,7 +292,7 @@ test.describe('Session Token Proxy Management', () => {
     page.on('response', response => {
       const url = response.url();
 
-      if (url.includes('/api/default/')) {
+      if (url.includes('/atx/default/')) {
         const requestHeaders = response.request().headers();
         proxyRequests.push({
           url,
@@ -384,7 +384,7 @@ test.describe('WordPress REST API Proxy', () => {
 
     page.on('response', response => {
       const url = response.url();
-      if (url.includes('/api/default/wp-json/')) {
+      if (url.includes('/atx/default/wp-json/')) {
         wpJsonRequests.push({
           url,
           status: response.status(),
@@ -431,7 +431,7 @@ test.describe('Proxy Error Handling', () => {
     const hasProxyErrors = [...consoleErrors, ...pageErrors].some(err =>
       err.toLowerCase().includes('proxy') ||
       err.includes('ECONNREFUSED') ||
-      err.includes('/api/default/')
+      err.includes('/atx/default/')
     );
 
     if (hasProxyErrors) {
