@@ -41,5 +41,5 @@ export function Content({ content, parser, instance = 'default', linksAs = 'a' a
     urlRewritingParser = createUrlRewritingParser(wpHomeUrl, wpSiteUrl, linksAs);
   }
 
-  return (<div>{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
+  return (<div data-content="">{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
 }

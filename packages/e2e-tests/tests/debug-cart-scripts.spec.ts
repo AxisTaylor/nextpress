@@ -16,7 +16,7 @@ test.describe('Debug Cart Page Scripts', () => {
 
     // Navigate to cart page
     await page.goto('/cart');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     console.log('\n=== CART PAGE SCRIPT DEBUG ===\n');
 

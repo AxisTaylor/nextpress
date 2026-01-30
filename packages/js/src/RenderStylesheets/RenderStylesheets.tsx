@@ -5,6 +5,7 @@ import React, {
 } from 'react';
 
 import { EnqueuedStylesheet } from "@/types";
+import { scopeInlineStyles } from "@/utils/scopeStyles";
 
 export interface StyleProps {
   id?: string;
@@ -60,7 +61,7 @@ export function RenderStylesheets({ stylesheets, instance = 'default' }: RenderS
           <Fragment key={handle}>
             {stylesheet.before && (
               <Style id={`${handle}-before`} precedence="low" href={href || undefined}>
-                {stylesheet.before.join('')}
+                {scopeInlineStyles(stylesheet.before.join(''))}
               </Style>
             )}
             {href && (
@@ -68,7 +69,7 @@ export function RenderStylesheets({ stylesheets, instance = 'default' }: RenderS
             )}
             {stylesheet.after && (
               <Style id={`${handle}-after`} precedence="high" href={href || undefined}>
-                {stylesheet.after.join('')}
+                {scopeInlineStyles(stylesheet.after.join(''))}
               </Style>
             )}
           </Fragment>

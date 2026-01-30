@@ -19,7 +19,7 @@ test.describe('Debug wc-settings Script', () => {
 
     // Go to cart page
     await page.goto('/cart');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     console.log('\n=== WC-SETTINGS DEBUG ===\n');
 

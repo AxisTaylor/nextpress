@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getWPInstance } from '../config/getWPInstance';
+import { getWPInstance } from '@/config/getWPInstance';
+import { scopeStylesheet } from '@/utils/scopeStyles';
 
 /**
  * Extracts the WordPress instance slug from the URL path
@@ -90,24 +91,58 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
     return NextResponse.json({ d: encoded });
   }
 
-  //Proxy handler for WP internal assets e.g. (.js, .css, .png, etc.) from wp-includes
+  // Proxy handler for WP internal assets e.g. (.js, .css, .png, etc.) from wp-includes
   if (nextPath.match(/^\/atx\/[^/]+\/wp-internal-assets\//)) {
-    const scriptUrl = nextPath.replace(
-      /^\/atx\/[^/]+\/wp-internal-assets\/(.*)/,
-      `${instance.wpSiteUrl}/$1`
-    );
+    const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-internal-assets\/(.*)/, '$1');
+    const assetUrl = `${instance.wpSiteUrl}/${assetPath}`;
 
-    return NextResponse.rewrite(scriptUrl);
+    // For CSS files, scope styles to [data-content] to prevent leaking into app layout
+    if (assetPath.endsWith('.css')) {
+      const response = await fetch(assetUrl);
+      if (!response.ok) {
+        return new NextResponse('Asset not found', { status: 404 });
+      }
+
+      const css = await response.text();
+      const scopedCss = scopeStylesheet(css);
+
+      return new NextResponse(scopedCss, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/css',
+          'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
+        },
+      });
+    }
+
+    return NextResponse.rewrite(assetUrl);
   }
 
   // Proxy handler for WP assets from wp-content
   if (nextPath.match(/^\/atx\/[^/]+\/wp-assets\//)) {
-    const scriptUrl = nextPath.replace(
-      /^\/atx\/[^/]+\/wp-assets\/(.*)/,
-      `${instance.wpHomeUrl}/$1`
-    );
+    const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-assets\/(.*)/, '$1');
+    const assetUrl = `${instance.wpHomeUrl}/${assetPath}`;
 
-    return NextResponse.rewrite(scriptUrl);
+    // For CSS files, scope styles to [data-content] to prevent leaking into app layout
+    if (assetPath.endsWith('.css')) {
+      const response = await fetch(assetUrl);
+      if (!response.ok) {
+        return new NextResponse('Asset not found', { status: 404 });
+      }
+
+      const css = await response.text();
+      const scopedCss = scopeStylesheet(css);
+
+      return new NextResponse(scopedCss, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/css',
+          'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
+        },
+      });
+    }
+
+    return NextResponse.rewrite(assetUrl);
   }
 
   // Proxy handler for WP REST API requests.

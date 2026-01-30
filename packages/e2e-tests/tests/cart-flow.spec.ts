@@ -115,9 +115,9 @@ test.describe('Complete Cart Flow', () => {
     await emailInput.fill('test@example.com');
 
     // Fill shipping details - WooCommerce Blocks re-renders on each change
-    // Use locator.fill() with auto-waiting and add small delays between fields
     await page.locator('#shipping-first_name').fill('Test');
     await page.locator('#shipping-last_name').fill('User');
+
     await page.locator('#shipping-address_1').fill('123 Test St');
     await page.locator('#shipping-city').fill('Test City');
 
@@ -126,12 +126,16 @@ test.describe('Complete Cart Flow', () => {
     const countrySelect = page.locator('#shipping-country');
     if (await countrySelect.count() > 0) {
       await countrySelect.selectOption('US');
+      // Wait for country-change re-render to stabilize
+      await page.waitForTimeout(1000);
     }
 
     // Select state - also a <select> element
     const stateSelect = page.locator('#shipping-state');
     if (await stateSelect.count() > 0) {
       await stateSelect.selectOption({ index: 1 });
+      // Wait for state-change re-render to stabilize
+      await page.waitForTimeout(1000);
     }
 
     await page.locator('#shipping-postcode').fill('12345');
