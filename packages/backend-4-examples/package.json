@@ -7,7 +7,9 @@
   },
   "scripts": {
     "start": "npm-run-all --sequential postinstall update-plugins build-images docker",
+    "start:detached": "npm-run-all --sequential postinstall update-plugins build-images docker:down docker:detached",
     "docker": "docker compose up",
+    "docker:detached": "docker compose up -d",
     "docker:down": "docker compose down -v --remove-orphans",
     "update-plugins": "composer update",
     "build-images": "docker compose build",

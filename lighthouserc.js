@@ -1,8 +1,15 @@
 module.exports = {
   ci: {
     collect: {
-      url: ['http://localhost:3000/', 'http://localhost:3000/shop/'],
+      url: [
+        'http://localhost:3000/',
+        'http://localhost:3000/shop/',
+        'http://localhost:3000/cart/',
+        'http://localhost:3000/checkout/',
+      ],
       numberOfRuns: 3,
+      // Seed the cart with a product before auditing cart/checkout pages
+      puppeteerScript: './scripts/lighthouse-cart-setup.js',
       // Both servers must be running before Lighthouse starts
       // Use `npm run dev` to start both, or start them manually
       startServerCommand: 'npm run dev',
