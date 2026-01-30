@@ -96,6 +96,7 @@ npm run changeset
 ```
 
 This will prompt you to:
+
 1. Select affected packages
 2. Choose version bump type (major/minor/patch)
 3. Write a summary of changes
