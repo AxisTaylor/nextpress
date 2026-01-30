@@ -36,7 +36,7 @@
     "lighthouse": "lhci autorun",
     "changeset": "changeset",
     "changeset:version": "changeset version && ts-node scripts/sync-wp-version.ts",
-    "changeset:publish": "npm publish -w ./packages/js",
+    "changeset:publish": "changeset publish",
     "release": "npm run build && changeset publish"
   },
   "keywords": [
