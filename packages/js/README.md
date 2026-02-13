@@ -63,28 +63,23 @@ export const config = {
 
 ```tsx
 // app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
-import { RenderStylesheets } from '@axistaylor/nextpress';
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 import { fetchAssets } from '@/lib/wordpress';
 
 export default async function WordPressLayout({ children }) {
-  const headersList = await headers();
-  const uri = headersList.get('x-nextpress-uri') || '/';
-
+  const uri = (await headers()).get('x-uri') || '/';
   const { scripts, stylesheets } = await fetchAssets(uri);
-  const headerScripts = scripts.filter(s => s.location === 'HEADER');
-  const footerScripts = scripts.filter(s => s.location === 'FOOTER');
 
   return (
     <html>
       <head>
-        <RenderStylesheets stylesheets={stylesheets} />
-        <HeadScripts scripts={headerScripts} />
+        <Stylesheets stylesheets={stylesheets} pathname={uri} />
+        <HeadScripts scripts={scripts} pathname={uri} />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={footerScripts} />
+        <BodyScripts scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -111,11 +106,12 @@ export default async function Page({ params }) {
 For complete documentation, see the [docs folder](../../docs/):
 
 - [Getting Started](../../docs/getting-started.md)
-- [Content Component](../../docs/content.md)
-- [HeadScripts & BodyScripts](../../docs/head-scripts.md)
-- [RenderStylesheets](../../docs/render-stylesheets.md)
-- [withWCR Configuration](../../docs/with-wcr.md)
-- [proxyByWCR Middleware](../../docs/proxy-by-wcr.md)
+- [Content Component](../../docs/api/content.md)
+- [HeadScripts](../../docs/api/head-scripts.md)
+- [BodyScripts](../../docs/api/body-scripts.md)
+- [Stylesheets](../../docs/api/stylesheets.md)
+- [withWCR Configuration](../../docs/api/with-wcr.md)
+- [proxyByWCR Middleware](../../docs/api/proxy-by-wcr.md)
 - [Multi-WordPress Setup](../../docs/multi-wordpress.md)
 - [WordPress Plugin](../../docs/wordpress-plugin.md)
 - [Troubleshooting](../../docs/troubleshooting.md)

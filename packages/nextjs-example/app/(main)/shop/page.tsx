@@ -2,6 +2,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { fetchProducts } from '@/lib/utils';
 
+export const revalidate = 3600;
+
 /**
  * WooCommerce Shop Page
  *

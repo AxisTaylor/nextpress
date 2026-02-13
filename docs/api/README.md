@@ -16,7 +16,7 @@ Complete reference for all NextPress exports.
 | [Content](./content.md) | Render WordPress HTML content with custom parsers |
 | [HeadScripts](./head-scripts.md) | Load WordPress header scripts with dependency resolution |
 | [BodyScripts](./body-scripts.md) | Load WordPress footer scripts |
-| [RenderStylesheets](./render-stylesheets.md) | Load WordPress stylesheets with inline styles |
+| [Stylesheets](./stylesheets.md) | Load WordPress stylesheets with inline styles |
 
 ## Configuration
 
@@ -29,7 +29,7 @@ Complete reference for all NextPress exports.
 
 ```tsx
 // Components
-import { Content, HeadScripts, BodyScripts, RenderStylesheets } from '@axistaylor/nextpress';
+import { Content, HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 
 // Configuration (separate entry points)
 import { withWCR } from '@axistaylor/nextpress/withWCR';

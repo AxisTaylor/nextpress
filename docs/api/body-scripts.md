@@ -1,28 +1,28 @@
 <!--
 title: "BodyScripts Component"
-description: "Render WordPress footer scripts with dependency resolution, loading strategies, and inline script support."
+description: "Render WordPress footer scripts as server components using next/script with afterInteractive strategy."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, BodyScripts, WordPress, scripts, footer scripts, Next.js"
+keywords: "NextPress, BodyScripts, WordPress, scripts, next/script, afterInteractive, server component"
 -->
 
 # BodyScripts
 
-The `BodyScripts` component renders WordPress footer scripts with proper dependency resolution, loading strategies, and inline script support.
+The `BodyScripts` component renders WordPress footer scripts using `next/script` with the `afterInteractive` strategy. It is a server component that loads scripts after page hydration.
 
 ## Basic Usage
 
 ```tsx
-import { BodyScripts } from '@axistaylor/nextpress/client';
+import { BodyScripts } from '@axistaylor/nextpress';
 
-export default function Layout({ children, scripts }) {
-  const footerScripts = scripts.filter(s => s.location === 'FOOTER');
+export default async function WordPressLayout({ children }) {
+  const { scripts } = await fetchAssets(uri);
 
   return (
     <html>
       <head>{/* ... */}</head>
       <body>
         {children}
-        <BodyScripts scripts={footerScripts} />
+        <BodyScripts scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -35,131 +35,99 @@ export default function Layout({ children, scripts }) {
 |------|------|----------|-------------|
 | `scripts` | `EnqueuedScript[]` | Yes | Array of WordPress scripts to render |
 | `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
+| `pathname` | `string` | No | Current page pathname (used for WooCommerce proxy placeholder replacement) |
 
-## Optimal Placement
+## How It Works
 
-**BodyScripts should be placed at the end of the `<body>` element in your root layout.** This ensures:
+BodyScripts filters for scripts with `location === 'FOOTER'` and renders each one as a `next/script` component with `strategy="afterInteractive"`. This means:
 
-- Page content loads first
-- Scripts don't block initial rendering
-- Footer scripts execute after DOM is ready
-- Consistent script loading across all pages
+- Scripts load after page hydration
+- Page content renders first without blocking
+- Scripts execute in the order rendered (dependency ordering handled server-side by WordPress)
 
-```tsx
-// app/(wordpress)/layout.tsx
-export default async function WordPressLayout({ children }) {
-  // ... fetch scripts
-  const footerScripts = scripts.filter(s => s.location === 'FOOTER');
-
-  return (
-    <html>
-      <head>{/* ... */}</head>
-      <body>
-        <main>{children}</main>
-        <BodyScripts scripts={footerScripts} />
-      </body>
-    </html>
-  );
-}
-```
+Because `next/script` with `afterInteractive` is managed by Next.js regardless of component tree position, BodyScripts works correctly wherever it's placed.
 
 ## Retrieving URI in Layouts
 
-BodyScripts needs to know the current URI to load the correct scripts. See [HeadScripts - Retrieving URI in Layouts](./head-scripts.md#retrieving-uri-in-layouts) for the complete setup guide.
-
-**Quick summary:**
-
-1. Configure `proxy.ts` to set `x-uri` header for page routes
-2. Ensure the matcher includes your page routes
-3. Read the header in your layout using `headers().get('x-uri')`
+BodyScripts needs the current URI for WooCommerce URL transformations. See [HeadScripts - Retrieving URI in Layouts](./head-scripts.md#retrieving-uri-in-layouts) for the complete setup guide.
 
 ```tsx
 // app/(wordpress)/layout.tsx
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 
 export default async function WordPressLayout({ children }) {
-  const headersList = await headers();
-  const uri = headersList.get('x-uri') || '/';
-
-  const { scripts } = await fetchAssets(uri);
-  const footerScripts = scripts.filter(s => s.location === 'FOOTER');
+  const uri = (await headers()).get('x-uri') || '/';
+  const { scripts, stylesheets } = await fetchAssets(uri);
 
   return (
     <html>
-      <head>{/* ... */}</head>
+      <head>
+        <Stylesheets stylesheets={stylesheets} pathname={uri} />
+        <HeadScripts scripts={scripts} pathname={uri} />
+      </head>
       <body>
         {children}
-        <BodyScripts scripts={footerScripts} />
+        <BodyScripts scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
 }
 ```
 
-## Footer vs Header Scripts
+## Script Rendering
 
-WordPress scripts have a `location` field indicating where they should load:
+For each footer script, BodyScripts renders (in order):
 
-| Location | Component | When to Use |
-|----------|-----------|-------------|
-| `HEADER` | `HeadScripts` | Critical scripts needed immediately |
-| `FOOTER` | `BodyScripts` | Scripts that can wait until after content loads |
+1. **`extraData`** - Localized script data with proxy placeholder replacement
+2. **`before`** - Inline script (with `wc-settings` URL transformation for WooCommerce)
+3. **Main script** - The script `src` (external scripts loaded directly, WordPress assets proxied)
+4. **`after`** - Inline script after the main script
 
-```tsx
-// Filter scripts by location
-const headerScripts = scripts.filter(s => s.location === 'HEADER');
-const footerScripts = scripts.filter(s => s.location === 'FOOTER');
-```
+All rendered with `strategy="afterInteractive"`.
 
-Most WordPress scripts are enqueued in the footer for better performance.
+## WooCommerce Compatibility
 
-## Script Loading Strategies
+BodyScripts includes special handling for WooCommerce:
 
-BodyScripts respects WordPress script loading strategies:
+- **`wc-settings` transformation**: The `before` script for `wc-settings` is transformed to replace WordPress backend URLs with frontend proxy URLs
+- **Proxy placeholder replacement**: `extraData` content has proxy placeholders resolved for the current instance and pathname
+- **External script detection**: Scripts from CDNs and payment gateways (e.g., Stripe) are loaded directly without proxying
 
-| Strategy | Behavior |
-|----------|----------|
-| `DEFER` | Script loads after HTML parsing |
-| `ASYNC` | Script loads asynchronously |
-| `BLOCKING` | Script blocks rendering (rare for footer scripts) |
+## URL Proxying
 
-## Dependency Resolution
+WordPress asset URLs are automatically transformed:
 
-Scripts are automatically sorted by dependencies, ensuring scripts load in the correct order:
-
-```tsx
-// If script-b depends on script-a, script-a renders first
-const scripts = [
-  { handle: 'script-a', dependencies: [] },
-  { handle: 'script-b', dependencies: ['script-a'] },
-];
-```
-
-## Inline Scripts & Extra Data
-
-BodyScripts handles WordPress inline scripts:
-
-- **`before`** - Inline script before the main script
-- **`after`** - Inline script after the main script
-- **`extraData`** - Localized data (from `wp_localize_script`)
+- Content assets (`/wp-content/...`) become `/atx/{instance}/wp-assets/...`
+- Internal assets (`/wp-includes/...`, `/wp-admin/...`) become `/atx/{instance}/wp-internal-assets/...`
+- External scripts (different origin from WordPress backend) are loaded directly
 
 ## Multi-WordPress Support
 
 When using multiple WordPress backends:
 
 ```tsx
-<BodyScripts scripts={footerScripts} instance="shop" />
+<BodyScripts scripts={scripts} instance="shop" pathname={uri} />
 ```
+
+## Server Component
+
+BodyScripts is a React Server Component:
+
+- No `'use client'` directive
+- Renders `next/script` tags on the server
+- Dependency ordering handled server-side by WordPress `assetsByUri` GraphQL query
+- WooCommerce URL transformations performed server-side
 
 ## TypeScript
 
 ```tsx
-import { BodyScripts } from '@axistaylor/nextpress/client';
+import { BodyScripts } from '@axistaylor/nextpress';
 import type { EnqueuedScript } from '@axistaylor/nextpress';
 ```
 
 ## Related
 
 - [HeadScripts](./head-scripts.md) - Header script loading and URI retrieval
-- [RenderStylesheets](./render-stylesheets.md) - Stylesheet loading
+- [Stylesheets](./stylesheets.md) - Stylesheet loading
 - [Getting Started](../getting-started.md) - Initial setup

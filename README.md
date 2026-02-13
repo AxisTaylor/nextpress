@@ -17,8 +17,8 @@ npm install @axistaylor/nextpress
 
 Components and utilities for rendering WordPress content in Next.js:
 - `Content` - Render WordPress HTML content with custom parsers
-- `HeadScripts` / `BodyScripts` - Load WordPress scripts with dependency resolution
-- `RenderStylesheets` - Load WordPress stylesheets with inline styles
+- `HeadScripts` / `BodyScripts` - Load WordPress scripts via `next/script` (server components)
+- `Stylesheets` - Load WordPress stylesheets with inline styles (server component)
 - `withWCR` - Next.js configuration wrapper
 - `proxyByWCR` - Middleware proxy for WordPress APIs
 
@@ -51,10 +51,12 @@ See the [docs](./docs/README.md) for detailed guides:
 
 - [Getting Started](./docs/getting-started.md)
 - [WordPress Plugin](./docs/wordpress-plugin.md)
-- [Content Component](./docs/content.md)
-- [HeadScripts / BodyScripts](./docs/head-scripts.md)
-- [withWCR Configuration](./docs/with-wcr.md)
-- [proxyByWCR Middleware](./docs/proxy-by-wcr.md)
+- [Content Component](./docs/api/content.md)
+- [HeadScripts](./docs/api/head-scripts.md)
+- [BodyScripts](./docs/api/body-scripts.md)
+- [Stylesheets](./docs/api/stylesheets.md)
+- [withWCR Configuration](./docs/api/with-wcr.md)
+- [proxyByWCR Middleware](./docs/api/proxy-by-wcr.md)
 
 ## Requirements
 

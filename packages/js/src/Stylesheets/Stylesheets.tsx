@@ -4,8 +4,8 @@ import React, {
   ReactNode,
 } from 'react';
 
-import { EnqueuedStylesheet } from "@/types";
-import { scopeInlineStyles } from "@/utils/scopeStyles";
+import { EnqueuedStylesheet } from '@/types';
+import { scopeInlineStyles } from '@/utils/scopeStyles';
 
 export interface StyleProps {
   id?: string;
@@ -16,9 +16,10 @@ export interface StyleProps {
 
 const Style = 'style' as unknown as FC<StyleProps>;
 
-type RenderStylesheetsProps = {
+export type StylesheetsProps = {
   stylesheets: EnqueuedStylesheet[];
   instance?: string;
+  pathname?: string;
 };
 
 /**
@@ -34,7 +35,7 @@ function extractPath(url: string): string {
   }
 }
 
-export function RenderStylesheets({ stylesheets, instance = 'default' }: RenderStylesheetsProps) {
+export function Stylesheets({ stylesheets, instance = 'default', pathname: _pathname = '' }: StylesheetsProps) {
   const isInternalRoute = /^\/wp-(?:includes|admin)\//;
 
   return (

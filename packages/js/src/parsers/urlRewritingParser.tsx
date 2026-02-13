@@ -6,15 +6,31 @@ import {
 } from 'html-react-parser';
 import type { ElementProps, CustomParser } from '@/utils/parseHtml';
 
+export interface UrlRewritingParserOptions {
+  wpHomeUrl?: string;
+  wpSiteUrl?: string;
+  LinkComponent?: FC<JSX.IntrinsicElements['a']>;
+  bypassExternalLinks?: boolean;
+}
+
 /**
  * Creates a URL rewriting parser that converts WordPress URLs to local Next.js routes
+ * and renders all links using the provided LinkComponent.
+ *
+ * By default, all links (internal and external) use LinkComponent.
+ * Pass bypassExternalLinks: true to only use LinkComponent for internal links.
  */
-export function createUrlRewritingParser(wpHomeUrl?: string, wpSiteUrl?: string, LinkComponent = 'a' as unknown as FC<JSX.IntrinsicElements['a']>): CustomParser {
+export function createUrlRewritingParser({
+  wpHomeUrl,
+  wpSiteUrl,
+  LinkComponent = 'a' as unknown as FC<JSX.IntrinsicElements['a']>,
+  bypassExternalLinks = false,
+}: UrlRewritingParserOptions = {}): CustomParser {
   return (node: DOMNode, props: ElementProps, children?: DOMNode[] | DOMNode): JSX.Element | undefined => {
     const element = node as Element;
 
     // Handle anchor tag URL rewriting
-    if (element.name === 'a' && props.href && (wpHomeUrl || wpSiteUrl)) {
+    if (element.name === 'a' && props.href) {
       let href = props.href as string;
 
       // Rewrite WordPress URLs to local routes
@@ -29,14 +45,19 @@ export function createUrlRewritingParser(wpHomeUrl?: string, wpSiteUrl?: string,
         href = '/' + href;
       }
 
-      // Only return if href was actually changed
-      if (href !== props.href) {
-        return (
-          <LinkComponent {...props} href={href}>
-            {children && domToReact(children as Element[])}
-          </LinkComponent>
-        );
+      // Check if the link is external (http://, https://, or protocol-relative //)
+      const isExternalLink = /^(https?:)?\/\//.test(href);
+
+      // Skip external links if bypassExternalLinks is enabled
+      if (bypassExternalLinks && isExternalLink) {
+        return undefined;
       }
+
+      return (
+        <LinkComponent {...props} href={href}>
+          {children && domToReact(children as Element[])}
+        </LinkComponent>
+      );
     }
 
     return undefined;

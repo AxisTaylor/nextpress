@@ -43,6 +43,30 @@ export function isProxiedRoute(pathname: string): boolean {
   );
 }
 
+export function isWPAssetRoute(pathname: string): boolean {
+  return !!pathname.match(/^\/atx\/[^/]+\/wp-assets\//)
+}
+
+export function isWPInternalAssetRoute(pathname: string): boolean {
+  return !!pathname.match(/^\/atx\/[^/]+\/wp-internal-assets\//);
+}
+
+export function isWPRestRequest(pathname: string): boolean {
+  return !!pathname.match(/^\/atx\/[^/]+\/wp-json\//)
+}
+
+export function isWPAjaxRequest(pathname: string): boolean {
+  const slug = extractSlugFromPath(pathname);
+  const wpAjaxPattern = new RegExp(`^/atx/${slug}/wp$`);
+  return wpAjaxPattern.test(pathname);
+}
+
+export function isWCAjaxRequest(pathname: string): boolean {
+  const slug = extractSlugFromPath(pathname);
+  const wcAjaxPattern = new RegExp(`^/atx/${slug}/wc$`);
+  return wcAjaxPattern.test(pathname);
+}
+
 export async function proxyByWCR(request: Request & { nextUrl: { pathname: string } }) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-url', request.url);
@@ -92,7 +116,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
   }
 
   // Proxy handler for WP internal assets e.g. (.js, .css, .png, etc.) from wp-includes
-  if (nextPath.match(/^\/atx\/[^/]+\/wp-internal-assets\//)) {
+  if (isWPInternalAssetRoute(nextPath)) {
     const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-internal-assets\/(.*)/, '$1');
     const assetUrl = `${instance.wpSiteUrl}/${assetPath}`;
 
@@ -119,7 +143,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
   }
 
   // Proxy handler for WP assets from wp-content
-  if (nextPath.match(/^\/atx\/[^/]+\/wp-assets\//)) {
+  if (isWPAssetRoute(nextPath)) {
     const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-assets\/(.*)/, '$1');
     const assetUrl = `${instance.wpHomeUrl}/${assetPath}`;
 
@@ -146,7 +170,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
   }
 
   // Proxy handler for WP REST API requests.
-  if (nextPath.match(/^\/atx\/[^/]+\/wp-json\//)) {
+  if (isWPRestRequest(nextPath)) {
     const url = new URL(request.url);
     const params = url.searchParams;
     const backendRoute = nextPath.replace(
@@ -173,7 +197,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
   const wpAjaxPattern = new RegExp(`^/atx/${slug}/wp$`);
   const wcAjaxPattern = new RegExp(`^/atx/${slug}/wc$`);
 
-  if (wpAjaxPattern.test(nextPath) || wcAjaxPattern.test(nextPath)) {
+  if (isWPAjaxRequest(nextPath) || isWCAjaxRequest(nextPath)) {
     const url = new URL(request.url);
     const params = url.searchParams;
     let backendRoute: string;

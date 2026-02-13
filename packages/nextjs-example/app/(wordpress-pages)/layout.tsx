@@ -6,10 +6,7 @@ import { Inter } from "next/font/google";
 import { fetchStylesAndScriptsByUri } from '@/lib/utils';
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import Stylesheets from "@/components/Stylesheets";
-import ScriptLoader from "@/components/ScriptLoader";
-import HeadScripts from "@/components/HeadScripts";
-import BodyScripts from "@/components/BodyScripts";
+import { Stylesheets, HeadScripts, BodyScripts } from "@axistaylor/nextpress";
 
 import "@/app/globals.css";
 
@@ -30,21 +27,19 @@ export default async function WordPressLayout({
   const { stylesheets, scripts } = await fetchStylesAndScriptsByUri(uri);
 
   return (
-    <ScriptLoader scripts={scripts}>
-      <html lang="en">
-        <head>
-          <Stylesheets stylesheets={stylesheets} />
-          <HeadScripts scripts={scripts} />
-        </head>
-        <body className={inter.className}>
-          <Navbar />
-          <main className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
-            {children}
-          </main>
-          <BodyScripts scripts={scripts} />
-          <Footer />
-        </body>
-      </html>
-    </ScriptLoader>
+    <html lang="en">
+      <head>
+        <Stylesheets stylesheets={stylesheets} pathname={uri} />
+        <HeadScripts scripts={scripts} pathname={uri} />
+      </head>
+      <body className={inter.className}>
+        <Navbar />
+        <main className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
+          {children}
+        </main>
+        <BodyScripts scripts={scripts} pathname={uri} />
+        <Footer />
+      </body>
+    </html>
   );
 }

@@ -1,12 +1,22 @@
 import { notFound } from 'next/navigation';
-import { fetchProduct } from '@/lib/utils';
+import { fetchProduct, fetchProducts } from '@/lib/utils';
 import { Product } from '@/components/Product';
 import { ProductProvider } from '@/components/ProductProvider';
+
+export const revalidate = 3600;
 
 export interface ProductPageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+/**
+ * Pre-build product pages at build time.
+ */
+export async function generateStaticParams() {
+  const products = await fetchProducts();
+  return products.map(p => ({ slug: p.slug }));
 }
 
 /**

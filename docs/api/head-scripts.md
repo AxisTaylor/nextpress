@@ -1,26 +1,26 @@
 <!--
 title: "HeadScripts Component"
-description: "Render WordPress header scripts with dependency resolution, loading strategies, and inline script support."
+description: "Render WordPress header scripts as server components using next/script with beforeInteractive strategy."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, HeadScripts, WordPress, scripts, dependency resolution, Next.js"
+keywords: "NextPress, HeadScripts, WordPress, scripts, next/script, beforeInteractive, server component"
 -->
 
 # HeadScripts
 
-The `HeadScripts` component renders WordPress header scripts with proper dependency resolution, loading strategies, and inline script support.
+The `HeadScripts` component renders WordPress header scripts using `next/script` with the `beforeInteractive` strategy. It is a server component that renders scripts in document order before any Next.js code runs.
 
 ## Basic Usage
 
 ```tsx
-import { HeadScripts } from '@axistaylor/nextpress/client';
+import { HeadScripts } from '@axistaylor/nextpress';
 
-export default function Layout({ children, scripts }) {
-  const headerScripts = scripts.filter(s => s.location === 'HEADER');
+export default async function WordPressLayout({ children }) {
+  const { scripts } = await fetchAssets(uri);
 
   return (
     <html>
       <head>
-        <HeadScripts scripts={headerScripts} />
+        <HeadScripts scripts={scripts} pathname={uri} />
       </head>
       <body>{children}</body>
     </html>
@@ -34,199 +34,115 @@ export default function Layout({ children, scripts }) {
 |------|------|----------|-------------|
 | `scripts` | `EnqueuedScript[]` | Yes | Array of WordPress scripts to render |
 | `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
+| `pathname` | `string` | No | Current page pathname |
 
-## Optimal Placement
+## How It Works
 
-**HeadScripts should be placed in the `<head>` element of your root layout.** This ensures:
+HeadScripts filters for scripts with `location === 'HEADER'` and renders each one as a `next/script` component with `strategy="beforeInteractive"`. This means:
 
-- Scripts load early in the page lifecycle
-- Dependencies are resolved before they're needed
-- Consistent script loading across all pages in the route group
+- Scripts are injected into the initial HTML `<head>`
+- They execute before any Next.js JavaScript runs
+- They load in the order rendered (dependency ordering is handled server-side by WordPress)
 
-```tsx
-// app/(wordpress)/layout.tsx
-export default async function WordPressLayout({ children }) {
-  // ... fetch scripts
-  return (
-    <html>
-      <head>
-        {/* Other head elements */}
-        <HeadScripts scripts={headerScripts} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
+Because `next/script` with `beforeInteractive` hoists to `<head>` automatically, HeadScripts works correctly regardless of where it's placed in the component tree.
 
 ## Retrieving URI in Layouts
 
-To fetch the correct scripts for each page, you need to know the current URI in your layout component. This is done through the proxy/middleware setting a custom header.
+To fetch the correct scripts for each page, you need the current URI in your layout. This is done through the proxy/middleware setting a custom header.
 
 ### Step 1: Configure Proxy to Set URI Header
 
-In your `proxy.ts` (Next.js 16+), set the `x-uri` header for page routes:
+In your `proxy.ts` (Next.js 16+) or `middleware.ts`, set the `x-uri` header:
 
 ```ts
-// proxy.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { proxyByWCR, isProxiedRoute } from '@axistaylor/nextpress/proxyByWCR';
 
 export const proxy = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
 
-  // Handle WordPress API routes
   if (isProxiedRoute(pathname)) {
     return proxyByWCR(request);
   }
 
-  // For page routes, set x-uri header
   const headers = new Headers(request.headers);
   headers.set('x-uri', pathname);
-  return NextResponse.next({
-    request: {
-      headers,
-    },
-  });
-};
-
-// CRITICAL: Matcher must include page routes to set the header
-export const config = {
-  matcher: [
-    // WordPress API routes
-    '/atx/:instance/wp',
-    '/atx/:instance/wc',
-    '/atx/:instance/wp-json/:path*',
-    '/atx/:instance/wp-assets/:path*',
-    // Page routes - REQUIRED for x-uri header
-    '/((?!_next|api|favicon.ico|.*\\.).*)',
-  ],
+  return NextResponse.next({ request: { headers } });
 };
 ```
 
 ### Step 2: Read URI Header in Layout
 
-Use Next.js `headers()` function to read the URI:
-
 ```tsx
 // app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
-import { RenderStylesheets } from '@axistaylor/nextpress';
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
-import { fetchAssets } from '@/lib/wordpress';
 
-export default async function WordPressLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Get URI from proxy header
-  const headersList = await headers();
-  const uri = headersList.get('x-uri') || '/';
-
-  // Fetch assets for this specific URI
+export default async function WordPressLayout({ children }) {
+  const uri = (await headers()).get('x-uri') || '/';
   const { scripts, stylesheets } = await fetchAssets(uri);
 
-  // Separate by location
-  const headerScripts = scripts.filter((s) => s.location === 'HEADER');
-  const footerScripts = scripts.filter((s) => s.location === 'FOOTER');
-
   return (
-    <html lang="en">
+    <html>
       <head>
-        <RenderStylesheets stylesheets={stylesheets} />
-        <HeadScripts scripts={headerScripts} />
+        <Stylesheets stylesheets={stylesheets} pathname={uri} />
+        <HeadScripts scripts={scripts} pathname={uri} />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={footerScripts} />
+        <BodyScripts scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
 }
 ```
 
-### Why This Pattern?
+## Script Rendering
 
-1. **Layouts don't have access to route params** - Unlike page components, layouts can't access `params` for dynamic routes
-2. **Assets are URI-specific** - Different pages enqueue different scripts
-3. **Performance** - Loading scripts in the layout ensures they're loaded once per navigation, not re-fetched on every page
+For each header script, HeadScripts renders (in order):
 
-## Script Loading Strategies
+1. **`extraData`** - Localized script data (from `wp_localize_script`)
+2. **`before`** - Inline script before the main script
+3. **NextPress config** - Automatically injected after `wp-api-fetch` for proxy URL configuration
+4. **Main script** - The script `src` proxied through Next.js
+5. **`after`** - Inline script after the main script
 
-HeadScripts respects WordPress script loading strategies:
+All rendered with `strategy="beforeInteractive"`.
 
-| Strategy | Behavior |
-|----------|----------|
-| `DEFER` | Script loads after HTML parsing (`defer` attribute) |
-| `ASYNC` | Script loads asynchronously (`async` attribute) |
-| `BLOCKING` | Script blocks rendering (default, no attribute) |
+## URL Proxying
 
-```tsx
-// Scripts from WordPress include strategy information
-const script = {
-  handle: 'my-script',
-  src: 'https://example.com/script.js',
-  strategy: 'DEFER', // Will render with defer attribute
-  location: 'HEADER',
-  // ...
-};
-```
+WordPress asset URLs are automatically transformed:
 
-## Dependency Resolution
-
-Scripts are automatically sorted by dependencies. If script A depends on script B, script B will be rendered first:
-
-```tsx
-// WordPress enqueues scripts with dependencies
-const scripts = [
-  { handle: 'jquery', src: '...', dependencies: [] },
-  { handle: 'my-plugin', src: '...', dependencies: ['jquery'] },
-];
-
-// HeadScripts renders jquery before my-plugin
-<HeadScripts scripts={scripts} />
-```
-
-## Inline Scripts
-
-HeadScripts handles inline scripts from WordPress:
-
-- **`before`** - Inline script rendered before the main script
-- **`after`** - Inline script rendered after the main script
-- **`extraData`** - Localized script data (e.g., from `wp_localize_script`)
-
-```tsx
-const script = {
-  handle: 'my-script',
-  src: 'https://example.com/script.js',
-  before: 'console.log("Before main script");',
-  after: 'console.log("After main script");',
-  extraData: 'var myData = {"apiUrl": "/api"};',
-  // ...
-};
-```
+- Content assets (`/wp-content/...`) become `/atx/{instance}/wp-assets/...`
+- Internal assets (`/wp-includes/...`, `/wp-admin/...`) become `/atx/{instance}/wp-internal-assets/...`
 
 ## Multi-WordPress Support
 
-When using multiple WordPress backends, specify the instance:
+When using multiple WordPress backends:
 
 ```tsx
-<HeadScripts scripts={headerScripts} instance="blog" />
+<HeadScripts scripts={scripts} instance="blog" pathname={uri} />
 ```
 
-This ensures asset URLs are proxied through the correct WordPress instance.
+## Server Component
+
+HeadScripts is a React Server Component:
+
+- No `'use client'` directive
+- Renders `next/script` tags on the server
+- Dependency ordering handled server-side by WordPress `assetsByUri` GraphQL query
+- No client-side script tracking or deduplication needed
 
 ## TypeScript
 
 ```tsx
-import { HeadScripts } from '@axistaylor/nextpress/client';
+import { HeadScripts } from '@axistaylor/nextpress';
 import type { EnqueuedScript } from '@axistaylor/nextpress';
 ```
 
 ## Related
 
 - [BodyScripts](./body-scripts.md) - Footer script loading
-- [RenderStylesheets](./render-stylesheets.md) - Stylesheet loading
+- [Stylesheets](./stylesheets.md) - Stylesheet loading
 - [proxyByWCR](./proxy-by-wcr.md) - Proxy configuration
 - [Getting Started](../getting-started.md) - Initial setup

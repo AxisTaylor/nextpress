@@ -262,4 +262,4 @@ import type { HTMLReactParserProps } from 'html-react-parser';
 
 - [Getting Started](../getting-started.md) - Initial setup
 - [HeadScripts](./head-scripts.md) - Loading WordPress scripts
-- [RenderStylesheets](./render-stylesheets.md) - Loading WordPress styles
+- [Stylesheets](./stylesheets.md) - Loading WordPress styles

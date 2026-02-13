@@ -1,26 +1,17 @@
 import 'server-only';
-import { cookies } from 'next/headers';
 import { EnqueuedScript, EnqueuedStylesheet } from "@axistaylor/nextpress";
+import { cookies } from 'next/headers';
 
 /**
- * Fetch content by URI with Cart-Token
+ * Fetch content by URI.
+ * Public WordPress content is the same for all users — no session cookies needed.
+ * Cart/checkout content is WC Blocks markup; actual user data is loaded client-side.
+ * Caching controlled at the route level via `revalidate` / `dynamic` exports.
  */
 export async function fetchContentByUri(uri: string): Promise<string> {
-  const cookieStore = await cookies();
-  const cartToken = cookieStore.get('cartToken')?.value;
-  const authToken = cookieStore.get('authToken')?.value;
-  const headers: Record<string, string> = {'Content-Type': 'application/json'};
-
-  if (cartToken) {
-    headers['Cart-Token'] = cartToken;
-  }
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
-
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
-    headers,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       query: `query ($uri: String!) {
         nodeByUri(uri: $uri) {
@@ -34,10 +25,8 @@ export async function fetchContentByUri(uri: string): Promise<string> {
       }`,
       variables: { uri },
     }),
-    cache: 'no-store',
   });
 
-  // Handle non-JSON responses
   if (!response.ok) {
     console.error(`[fetchContentByUri] GraphQL error for ${uri}:`, response.status);
     return '';
@@ -53,17 +42,78 @@ export async function fetchContentByUri(uri: string): Promise<string> {
   }
 
   const node = data?.nodeByUri;
-
   if (!node) {
     return '';
   }
 
-  const content = node.content;
-
-  return content;
+  return node.content;
 }
 
-export async function fetchStylesAndScriptsByUri(uri: string): Promise<{ scripts: EnqueuedScript[], stylesheets: EnqueuedStylesheet[] }> {
+/**
+ * Cacheable query — fetches asset structure (handle, src, version, deps, etc.)
+ * without nonce-sensitive inline data. Inherits route-level revalidation.
+ */
+async function fetchAssetStructureByUri(uri: string): Promise<{
+  scripts: Omit<EnqueuedScript, 'before' | 'after'>[];
+  stylesheets: Omit<EnqueuedStylesheet, 'before' | 'after'>[];
+}> {
+  const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `query ($uri: String!) {
+        assetsByUri(uri: $uri) {
+          id
+          uri
+          enqueuedStylesheets(first: 500) {
+            nodes {
+              handle
+              src
+              version
+            }
+          }
+          enqueuedScripts(first: 500) {
+            nodes {
+              handle
+              src
+              strategy
+              version
+              group
+              location
+              extraData
+              dependencies {
+                handle
+              }
+            }
+          }
+        }
+      }`,
+      variables: { uri },
+    }),
+  });
+
+  const { data } = await response.json();
+  const assets = data?.assetsByUri;
+
+  if (!assets) {
+    return { scripts: [], stylesheets: [] };
+  }
+
+  return {
+    scripts: assets.enqueuedScripts.nodes,
+    stylesheets: assets.enqueuedStylesheets.nodes,
+  };
+}
+
+/**
+ * Dynamic query — fetches inline script/stylesheet data (before/after).
+ * These contain nonce-sensitive data (e.g., wc-settings Store API nonces)
+ * and must always be fresh.
+ */
+async function fetchInlineScriptDataByUri(uri: string): Promise<{
+  scripts: Array<{ handle: string; before: EnqueuedScript['before']; after: EnqueuedScript['after'] }>;
+  stylesheets: Array<{ handle: string; before: EnqueuedStylesheet['before']; after: EnqueuedStylesheet['after'] }>;
+}> {
   const cookieStore = await cookies();
   const cartToken = cookieStore.get('cartToken')?.value;
   const authToken = cookieStore.get('authToken')?.value;
@@ -81,39 +131,23 @@ export async function fetchStylesAndScriptsByUri(uri: string): Promise<{ scripts
     body: JSON.stringify({
       query: `query ($uri: String!) {
         assetsByUri(uri: $uri) {
-          id
-          uri
           enqueuedStylesheets(first: 500) {
             nodes {
               handle
-              src
-              version
-              after
               before
-              dependencies {
-                handle
-              }
+              after
             }
           }
           enqueuedScripts(first: 500) {
             nodes {
               handle
-              src
-              strategy
-              version
-              after
-              group
-              location
               before
-              extraData
-              dependencies {
-                handle
-              }
+              after
             }
           }
         }
       }`,
-      variables: { uri }
+      variables: { uri },
     }),
     cache: 'no-store',
   });
@@ -122,19 +156,79 @@ export async function fetchStylesAndScriptsByUri(uri: string): Promise<{ scripts
   const assets = data?.assetsByUri;
 
   if (!assets) {
-    return {
-      scripts: [],
-      stylesheets: [],
-    };
+    return { scripts: [], stylesheets: [] };
   }
-
-  const scripts = assets.enqueuedScripts.nodes;
-  const stylesheets = assets.enqueuedStylesheets.nodes;
 
   return {
-    scripts,
-    stylesheets,
-  }
+    scripts: assets.enqueuedScripts.nodes,
+    stylesheets: assets.enqueuedStylesheets.nodes,
+  };
+}
+
+/**
+ * Fetch styles and scripts by URI with two-tier caching.
+ * Asset structure (handles, src, versions) is cacheable via route-level revalidation.
+ * Inline script data (before/after with nonces) is always fetched fresh.
+ * Results are merged by handle before returning.
+ */
+export async function fetchStylesAndScriptsByUri(uri: string): Promise<{
+  scripts: EnqueuedScript[];
+  stylesheets: EnqueuedStylesheet[];
+}> {
+  const [structure, inlineData] = await Promise.all([
+    fetchAssetStructureByUri(uri),
+    fetchInlineScriptDataByUri(uri),
+  ]);
+
+  // Merge inline data onto asset structure by handle
+  const scriptInlineMap = new Map(
+    inlineData.scripts.map(s => [s.handle, { before: s.before, after: s.after }])
+  );
+  const stylesheetInlineMap = new Map(
+    inlineData.stylesheets.map(s => [s.handle, { before: s.before, after: s.after }])
+  );
+
+  const scripts: EnqueuedScript[] = structure.scripts.map(script => ({
+    ...script,
+    ...(scriptInlineMap.get(script.handle as string) || { before: null, after: null }),
+  }));
+
+  const stylesheets: EnqueuedStylesheet[] = structure.stylesheets.map(stylesheet => ({
+    ...stylesheet,
+    ...(stylesheetInlineMap.get(stylesheet.handle as string) || { before: null, after: null }),
+  }));
+
+  return { scripts, stylesheets };
+}
+
+/**
+ * Fetch all WordPress page slugs for static generation.
+ * Excludes WooCommerce pages (cart, checkout) that must be dynamic.
+ */
+const DYNAMIC_PAGE_SLUGS = ['cart', 'checkout'];
+
+export async function fetchPageSlugs(): Promise<string[][]> {
+  const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `query {
+        pages(first: 100) {
+          nodes {
+            uri
+          }
+        }
+      }`,
+    }),
+  });
+
+  const { data } = await response.json();
+  const pages: Array<{ uri: string }> = data?.pages?.nodes || [];
+
+  return pages
+    .map(page => page.uri.replace(/^\/|\/$/g, '')) // strip leading/trailing slashes
+    .filter(slug => slug && !DYNAMIC_PAGE_SLUGS.includes(slug))
+    .map(slug => slug.split('/'));
 }
 
 export interface ProductImage {
@@ -159,7 +253,7 @@ export interface Product {
 export async function fetchProducts(): Promise<Product[]> {
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       query: `query {
         products(first: 10) {
@@ -187,11 +281,10 @@ export async function fetchProducts(): Promise<Product[]> {
         }
       }`,
     }),
-    cache: 'no-store',
   });
 
   const { data } = await response.json();
-  const products = data?.products?.edges?.map((edge: any) => edge.node) || [];
+  const products = data?.products?.edges?.map((edge: { node: Product }) => edge.node) || [];
 
   return products;
 }
@@ -199,7 +292,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProduct(slug: string) {
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       query: `query ($slug: ID!) {
         product(id: $slug, idType: SLUG) {
@@ -231,7 +324,6 @@ export async function fetchProduct(slug: string) {
       }`,
       variables: { slug },
     }),
-    cache: 'no-store',
   });
 
   const { data } = await response.json();

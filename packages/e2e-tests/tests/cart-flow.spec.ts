@@ -99,17 +99,15 @@ test.describe('Complete Cart Flow', () => {
     await checkoutButton.waitFor({ state: 'visible', timeout: 30000 });
     await checkoutButton.click();
 
-    // Wait for checkout page to load
+    // Wait for checkout page URL and block to render
     await page.waitForURL(/\/checkout/, { timeout: 30000 });
-    await page.waitForLoadState('domcontentloaded');
-
     await expect(page).toHaveURL(/\/checkout/);
 
     // Step 8: Fill out checkout form (WooCommerce Blocks checkout)
-    // Wait for checkout block to load
-    await page.waitForSelector('.wc-block-checkout', { timeout: 30000 });
+    // Wait for Stripe iframe to appear — this signals payment methods have loaded
+    // and the form won't be cleared/re-rendered by Stripe initialization
+    await page.locator('iframe[name*="__privateStripeFrame"]').first().waitFor({ state: 'visible', timeout: 30000 });
 
-    // Fill email (required first in Blocks checkout)
     const emailInput = page.locator('#email');
     await emailInput.waitFor({ state: 'visible', timeout: 10000 });
     await emailInput.fill('test@example.com');

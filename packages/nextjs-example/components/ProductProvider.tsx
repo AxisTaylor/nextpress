@@ -19,10 +19,17 @@ type Product = {
   databaseId: number;
   name: string;
   price: number;
+  regularPrice: number;
+  salePrice: number;
   type: "SIMPLE" | "VARIABLE";
   variations?: ProductVariation[];
   description: string;
   shortDescription: string;
+  image: {
+    sourceUrl: string;
+    altText: string;
+    name: string;
+  }
 };
 
 export interface ProductContext {
