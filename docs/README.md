@@ -22,7 +22,7 @@ A comprehensive toolkit for rendering WordPress Gutenberg content 1:1 in Next.js
 - [Content](./api/content.md) - Render WordPress HTML content with custom parsers
 - [HeadScripts](./api/head-scripts.md) - Load WordPress header scripts with dependency resolution
 - [BodyScripts](./api/body-scripts.md) - Load WordPress footer scripts
-- [RenderStylesheets](./api/render-stylesheets.md) - Load WordPress stylesheets with inline styles
+- [Stylesheets](./api/stylesheets.md) - Load WordPress stylesheets with inline styles
 - [withWCR](./api/with-wcr.md) - Next.js configuration wrapper
 - [proxyByWCR](./api/proxy-by-wcr.md) - Middleware proxy for WordPress APIs
 
@@ -50,7 +50,7 @@ NextPress provides a set of React components and Next.js utilities that work tog
 
 1. **Content Component**: Parses and renders WordPress HTML content with custom element handling
 2. **HeadScripts/BodyScripts**: Manage WordPress JavaScript files with correct load order
-3. **RenderStylesheets**: Include WordPress CSS with inline style support
+3. **Stylesheets**: Include WordPress CSS with inline style support
 4. **withWCR**: Next.js configuration wrapper for seamless integration
 5. **proxyByWCR**: Middleware proxy for secure WordPress API communication
 

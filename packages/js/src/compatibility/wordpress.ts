@@ -29,20 +29,17 @@ export async function fetchRestNonce(instance: string): Promise<string> {
 }
 
 /**
- * Injects nextPressConfig into the window object before wp-api-fetch loads
- * This should be called when the wp-api-fetch script is about to load.
+ * Returns the nextPressConfig inline script content for a given instance.
+ * Used by HeadScripts to render an inline Script tag before wp-api-fetch loads.
  *
  * @param instance - WordPress instance slug
+ * @returns Script content string
  */
-export function injectNextPressConfig(instance: string): void {
-  const configEl = document.createElement('script');
-  configEl.id = 'nextpress-config';
-  configEl.textContent = `
-    // Preserve existing nextPressConfig properties (like wc)
+export function getNextPressConfigScript(instance: string): string {
+  return `
     window.nextPressConfig = window.nextPressConfig || {};
     window.nextPressConfig.instance = '${instance}';
     window.nextPressConfig.rootURL = '/atx/${instance}/wp-json/';
     window.nextPressConfig.nonceEndpoint = '/atx/${instance}/wp?action=rest-nonce';
   `;
-  document.head.appendChild(configEl);
 }

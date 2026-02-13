@@ -65,14 +65,13 @@ Pass the `instance` prop to specify which WordPress backend to use:
 
 ```tsx
 import { Content } from '@axistaylor/nextpress';
-import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
-import { RenderStylesheets } from '@axistaylor/nextpress';
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 
 // Use the blog instance
 <Content content={content} instance="blog" />
-<HeadScripts scripts={scripts} instance="blog" />
-<BodyScripts scripts={scripts} instance="blog" />
-<RenderStylesheets stylesheets={stylesheets} instance="blog" />
+<HeadScripts scripts={scripts} instance="blog" pathname={uri} />
+<BodyScripts scripts={scripts} instance="blog" pathname={uri} />
+<Stylesheets stylesheets={stylesheets} instance="blog" pathname={uri} />
 ```
 
 ### Default Instance
@@ -109,8 +108,7 @@ app/
 
 ```tsx
 // app/(blog)/layout.tsx
-import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
-import { RenderStylesheets } from '@axistaylor/nextpress';
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 import { fetchAssets } from '@/lib/wordpress';
 
@@ -126,18 +124,15 @@ export default async function BlogLayout({
 
   const { scripts, stylesheets } = await fetchAssets(uri, INSTANCE);
 
-  const headerScripts = scripts.filter((s) => s.location === 'HEADER');
-  const footerScripts = scripts.filter((s) => s.location === 'FOOTER');
-
   return (
     <html lang="en">
       <head>
-        <RenderStylesheets stylesheets={stylesheets} instance={INSTANCE} />
-        <HeadScripts scripts={headerScripts} instance={INSTANCE} />
+        <Stylesheets stylesheets={stylesheets} instance={INSTANCE} pathname={uri} />
+        <HeadScripts scripts={scripts} instance={INSTANCE} pathname={uri} />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={footerScripts} instance={INSTANCE} />
+        <BodyScripts scripts={scripts} instance={INSTANCE} pathname={uri} />
       </body>
     </html>
   );

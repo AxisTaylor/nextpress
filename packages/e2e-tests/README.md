@@ -6,7 +6,7 @@ End-to-end tests for NextPress using Playwright.
 
 These tests validate the full NextPress stack:
 
-1. **React Server Components** - RenderStylesheets, HeadScripts, BodyScripts (cannot be unit tested)
+1. **React Server Components** - Stylesheets, HeadScripts, BodyScripts (cannot be unit tested)
 2. **WordPress Integration** - Content rendering, asset loading, middleware proxy
 3. **User Flows** - Page rendering, WooCommerce cart/checkout, authentication
 4. **Multi-WordPress** - Instance routing and configuration
@@ -68,12 +68,14 @@ npm run test:codegen
 
 ```
 tests/
-├── smoke.spec.ts           # Basic smoke tests
-├── rsc-components.spec.ts  # React Server Component tests (critical!)
-├── page-rendering.spec.ts  # WordPress page rendering
-├── woocommerce.spec.ts     # Cart, checkout, products
-├── assets.spec.ts          # Asset loading and proxy
-└── multi-wordpress.spec.ts # Multi-instance routing
+├── smoke.spec.ts              # Basic smoke tests
+├── rsc-components.spec.ts     # React Server Component tests (critical!)
+├── cart-flow.spec.ts          # Full cart journey: shop → add to cart → checkout → order
+├── cart-session.spec.ts       # Cart session persistence and cookie management
+├── proxy.spec.ts              # Middleware proxy routing
+├── style-isolation.spec.ts    # WordPress stylesheet isolation
+├── debug-cart-scripts.spec.ts # Debug: cart page script loading
+└── debug-wc-settings.spec.ts  # Debug: wc-settings configuration
 ```
 
 ## Writing Tests
@@ -93,8 +95,8 @@ test('example test', async ({ page }) => {
 
 These tests validate React Server Components that **cannot** be tested with Jest:
 
-- **RenderStylesheets**: Verify stylesheets load in correct order, inline styles, URL proxying
-- **HeadScripts/BodyScripts**: Verify script placement, dependencies, loading strategies, wp-api-fetch refactoring
+- **Stylesheets**: Verify stylesheets load in correct order, inline styles, URL proxying
+- **HeadScripts/BodyScripts**: Verify script placement via `next/script`, `beforeInteractive`/`afterInteractive` strategies, WooCommerce compatibility
 
 ### WordPress Integration
 

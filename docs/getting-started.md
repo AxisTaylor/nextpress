@@ -181,8 +181,7 @@ Create a layout that loads scripts and styles based on the current URI:
 
 ```tsx
 // app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts } from '@axistaylor/nextpress/client';
-import { RenderStylesheets } from '@axistaylor/nextpress';
+import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 import { fetchAssets } from '@/lib/wordpress';
 
@@ -198,19 +197,15 @@ export default async function WordPressLayout({
   // Fetch WordPress assets for this URI
   const { scripts, stylesheets } = await fetchAssets(uri);
 
-  // Separate header and footer scripts
-  const headerScripts = scripts.filter((s) => s.location === 'HEADER');
-  const footerScripts = scripts.filter((s) => s.location === 'FOOTER');
-
   return (
     <html lang="en">
       <head>
-        <RenderStylesheets stylesheets={stylesheets} />
-        <HeadScripts scripts={headerScripts} />
+        <Stylesheets stylesheets={stylesheets} pathname={uri} />
+        <HeadScripts scripts={scripts} pathname={uri} />
       </head>
       <body>
         <main>{children}</main>
-        <BodyScripts scripts={footerScripts} />
+        <BodyScripts scripts={scripts} pathname={uri} />
       </body>
     </html>
   );

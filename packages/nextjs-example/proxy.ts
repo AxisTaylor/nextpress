@@ -1,5 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
-import { proxyByWCR, isProxiedRoute } from '@axistaylor/nextpress/proxyByWCR';
+import {
+  proxyByWCR,
+  isProxiedRoute,
+  isWCAjaxRequest,
+  isWPAjaxRequest,
+  isWPRestRequest,
+} from '@axistaylor/nextpress/proxyByWCR';
 
 /**
  * Middleware to proxy WordPress API requests and manage Cart-Token
@@ -15,7 +21,7 @@ export const proxy = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
 
   // Check if this is a WordPress proxy route
-  if (isProxiedRoute(pathname)) {
+  if (isProxiedRoute(pathname) && (isWPAjaxRequest(pathname) || isWCAjaxRequest(pathname) || isWPRestRequest(pathname))) {
     // Get existing Cart-Token from cookies
     const cartToken = request.cookies.get('cartToken')?.value;
     const authToken = request.cookies.get('authToken')?.value;
@@ -27,7 +33,9 @@ export const proxy = async (request: NextRequest) => {
     if (authToken) {
       request.headers.set('Authorization', `Bearer ${authToken}`);
     }
+  }
 
+  if (isProxiedRoute(pathname)) {
     // Proxy request to WordPress backend
     const response = await proxyByWCR(request);
 

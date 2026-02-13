@@ -8,7 +8,8 @@ export interface ContentProps {
   content: string;
   instance?: string;
   parser?: CustomParser;
-  linksAs?: FC<JSX.IntrinsicElements['a']>
+  linksAs?: FC<JSX.IntrinsicElements['a']>;
+  bypassExternalLinks?: boolean;
 }
 
 /**
@@ -28,7 +29,7 @@ function fixInvalidHtml(html: string): string {
   );
 }
 
-export function Content({ content, parser, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']> }: ContentProps) {
+export function Content({ content, parser, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']>, bypassExternalLinks = false }: ContentProps) {
   const fixedContent = fixInvalidHtml(content);
 
   // Check if formatPermalinks is enabled (defaults to true)
@@ -38,7 +39,12 @@ export function Content({ content, parser, instance = 'default', linksAs = 'a' a
   let urlRewritingParser: CustomParser | undefined;
   if (formatPermalinks) {
     const { wpHomeUrl, wpSiteUrl } = getWPInstance(instance);
-    urlRewritingParser = createUrlRewritingParser(wpHomeUrl, wpSiteUrl, linksAs);
+    urlRewritingParser = createUrlRewritingParser({
+      wpHomeUrl,
+      wpSiteUrl,
+      LinkComponent: linksAs,
+      bypassExternalLinks,
+    });
   }
 
   return (<div data-content="">{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
