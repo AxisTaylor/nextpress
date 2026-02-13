@@ -1,5 +1,19 @@
 # @axistaylor/nextpress
 
+## 1.1.0
+
+### Minor Changes
+
+- [#14](https://github.com/AxisTaylor/nextpress/pull/14) [`3db1467`](https://github.com/AxisTaylor/nextpress/commit/3db1467902746fdeef135f0a77acfa8527fcfdd6) Thanks [@kidunot89](https://github.com/kidunot89)! - - Convert HeadScripts, BodyScripts, and Stylesheets to React Server Components using next/script
+  - HeadScripts renders with strategy="beforeInteractive", BodyScripts with strategy="afterInteractive"
+  - Rename RenderStylesheets to Stylesheets with React precedence attribute for automatic <head> hoisting
+  - Add pathname prop to all three components
+  - Remove client-side ScriptLoader and sortScriptsByDependencies — dependency ordering handled server-side by WordPress
+  - All components now exported from @axistaylor/nextpress (no more /client import path for scripts)
+  - Add WooCommerce compatibility: wc-settings URL transformation, proxy placeholder replacement, external script detection in BodyScripts
+  - Add bypassExternalLinks option to urlRewritingParser
+  - Add linksAs prop to Content for replacing <a> tags with custom components (e.g., Next.js Link)
+
 ## 1.0.1
 
 ### Patch Changes
