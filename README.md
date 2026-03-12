@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./logo.svg" alt="NextPress" width="120" />
+</p>
+
 # NextPress
 
 [![npm version](https://img.shields.io/npm/v/@axistaylor/nextpress.svg)](https://www.npmjs.com/package/@axistaylor/nextpress)

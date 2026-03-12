@@ -5,6 +5,10 @@ author: "AxisTaylor, LLC"
 keywords: "NextPress, Next.js, WordPress, Gutenberg, WPGraphQL, headless CMS, content rendering"
 -->
 
+<p align="center">
+  <img src="../logo.svg" alt="@axistaylor/nextpress" width="120" />
+</p>
+
 # @axistaylor/nextpress
 
 A comprehensive toolkit for rendering WordPress Gutenberg content 1:1 in Next.js applications.
