@@ -45,7 +45,7 @@ export default async function WordPressLayout({
           {children}
         </main>
         <BodyScripts scripts={scripts} pathname={uri} />
-        <AssetUpdater fetchAssets={fetchAssets} pathname={uri} />
+        <AssetUpdater fetchAssets={fetchAssets} />
         <Footer />
       </body>
     </html>

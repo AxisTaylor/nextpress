@@ -1,5 +1,5 @@
 import 'server-only';
-import { EnqueuedScript, EnqueuedStylesheet, GlobalStyles } from "@axistaylor/nextpress";
+import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType } from "@axistaylor/nextpress";
 import { cookies } from 'next/headers';
 
 /**
@@ -205,7 +205,7 @@ export async function fetchStylesAndScriptsByUri(uri: string): Promise<{
  * Fetch global WordPress styles (theme.json stylesheet, custom CSS, font faces).
  * These are the same for all pages and can be cached at the route level.
  */
-export async function fetchGlobalStyles(): Promise<GlobalStyles> {
+export async function fetchGlobalStyles(): Promise<GlobalStylesType> {
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
