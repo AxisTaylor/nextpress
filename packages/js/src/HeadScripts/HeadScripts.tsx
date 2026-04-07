@@ -49,6 +49,9 @@ export function HeadScripts({ scripts, instance = 'default', pathname: _pathname
 
   return (
     <>
+      <Script id="nextpress-head-scripts-start" strategy="beforeInteractive">
+        {`/* nextpress:head-scripts-start */`}
+      </Script>
       {headerScripts.map((script) => {
         // Transform src URL
         let src = '';
@@ -69,14 +72,14 @@ export function HeadScripts({ scripts, instance = 'default', pathname: _pathname
           <Fragment key={handle}>
             {script.extraData && (
               <Script
-                id={`${handle}-extra`}
+                id={`${handle}-js-extra`}
                 strategy="beforeInteractive"
                 dangerouslySetInnerHTML={{ __html: script.extraData }}
               />
             )}
             {script.before && (
               <Script
-                id={`${handle}-before`}
+                id={`${handle}-js-before`}
                 strategy="beforeInteractive"
                 dangerouslySetInnerHTML={{ __html: joinScriptContent(script.before) }}
               />
@@ -97,7 +100,7 @@ export function HeadScripts({ scripts, instance = 'default', pathname: _pathname
             )}
             {script.after && (
               <Script
-                id={`${handle}-after`}
+                id={`${handle}-js-after`}
                 strategy="beforeInteractive"
                 dangerouslySetInnerHTML={{ __html: joinScriptContent(script.after) }}
               />
@@ -105,6 +108,9 @@ export function HeadScripts({ scripts, instance = 'default', pathname: _pathname
           </Fragment>
         );
       })}
+      <Script id="nextpress-head-scripts-end" strategy="beforeInteractive">
+        {`/* nextpress:head-scripts-end */`}
+      </Script>
     </>
   );
 }

@@ -391,6 +391,63 @@ If you're still experiencing issues:
    - Steps to reproduce
    - Error messages
 
+## Tailwind Preflight Overriding WordPress Styles
+
+### Symptoms
+
+- WordPress button text is the wrong color on cart/checkout (e.g. black instead of white from the theme's `--wp--preset--color--base`).
+- Anchor colors and `text-decoration` inside rendered WordPress content match your site chrome instead of the theme's global stylesheet.
+- Block layouts look broken on pages that use WooCommerce Blocks or theme.json presets.
+
+### Cause
+
+Tailwind's Preflight layer resets `a { color: inherit; text-decoration: inherit }`, `button { … }`, etc., at element-selector specificity. Inside `[data-rendered]`, WordPress's scoped global stylesheet tries to restore theme colors via rules like `:where(.wp-element-button) { color: var(--wp--preset--color--base) }` — but `:where()` is zero-specificity, so the Preflight reset wins in some cascade configurations.
+
+### Solutions
+
+**Option 1 — Use a dedicated stylesheet for the WordPress route group (recommended).**
+
+Split your Tailwind entrypoints: keep `globals.css` (with full Preflight) for your main layout, and create a `wordpress.css` that imports Tailwind without Preflight for the `(wordpress-pages)` layout.
+
+```css
+/* app/wordpress.css — Tailwind v4 */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) important;
+```
+
+The `important` flag on the utilities import ensures your Tailwind utilities still win over WordPress's scoped global stylesheet inside your app chrome (Navbar, Footer, etc.) without needing Preflight's element resets.
+
+```tsx
+// app/(wordpress-pages)/layout.tsx
+import "@/app/wordpress.css";
+```
+
+Everything outside the `(wordpress-pages)` route group continues to import `globals.css` with full Preflight.
+
+**Option 2 — Extend Preflight to skip `[data-rendered]`.**
+
+If you need Preflight's resets (for consistency with the rest of your site) but want WordPress content to take over inside `[data-rendered]`, override the offending rules in `@layer base`:
+
+```css
+/* app/globals.css */
+@import "tailwindcss";
+
+@layer base {
+  [data-rendered] a {
+    color: revert-layer;
+    text-decoration: revert-layer;
+  }
+}
+```
+
+`revert-layer` rolls the declared property back to the value it had before the current cascade layer, effectively removing Preflight's anchor reset for descendants of the NextPress content wrapper and letting WordPress's scoped `:where(.wp-element-button) { color: … }` rules take effect.
+
+See [Tailwind's "Extending Preflight" docs](https://tailwindcss.com/docs/preflight#extending-preflight) for the underlying technique.
+
+**Option 3 — Disable Preflight entirely.**
+
+If your project doesn't rely on Preflight at all, use [`corePlugins.preflight: false`](https://tailwindcss.com/docs/preflight#disabling-preflight) (Tailwind v3) or import only the subsets you need (Tailwind v4 — see Option 1). This is the blunt instrument; prefer Option 1 or 2 unless you have a reason to.
+
 ## Related
 
 - [Getting Started](./getting-started.md) - Initial setup

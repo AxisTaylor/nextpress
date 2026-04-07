@@ -1,0 +1,123 @@
+/*
+ * Stylesheet for routes under (wordpress-pages).
+ *
+ * Intentionally omits `@tailwind base` (Preflight) so WordPress's own global
+ * styles (served via the scoped `global-styles-nextpress` <style> tag) can
+ * fully control element defaults inside [data-rendered] without Preflight's
+ * `a { color: inherit }`, `button { ... }`, etc. resets overriding them.
+ *
+ * Tailwind components/utilities are still available for the Navbar, Footer,
+ * and other app chrome rendered outside [data-rendered].
+ */
+/*
+ * When importing Tailwind as subsets (no `@import "tailwindcss"`),
+ * source detection must be attached to the utilities import since that's
+ * the import that generates class-based output.
+ * See: https://tailwindcss.com/docs/preflight#disabling-preflight
+ */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) important;
+
+/*
+ * Modified normalization layer.
+ *
+ * Provides the essential Preflight-style resets (box-sizing, body margin,
+ * heading/list/button resets, media display, form inheritance) for the app
+ * chrome (Navbar, Footer, etc.) that lives outside [data-rendered], while
+ * explicitly excluding any element inside [data-rendered] so WordPress's
+ * own global stylesheet retains full control of its content defaults.
+ *
+ * Notably omits Preflight's `a { color: inherit; text-decoration: inherit }`
+ * reset — that rule was the cause of WP button/link colors being overridden
+ * on cart/checkout pages.
+ */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      sans-serif,
+      "Apple Color Emoji",
+      "Segoe UI Emoji",
+      "Segoe UI Symbol",
+      "Noto Color Emoji";
+  }
+
+  body:not([data-rendered] *) {
+    margin: 0;
+    line-height: inherit;
+  }
+
+  :is(h1, h2, h3, h4, h5, h6, p, blockquote, dl, dd, figure, pre):not([data-rendered] *) {
+    margin: 0;
+  }
+
+  :is(ol, ul, menu):not([data-rendered] *) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  :is(img, svg, video, canvas, audio, iframe, embed, object):not([data-rendered] *) {
+    display: block;
+    vertical-align: middle;
+  }
+
+  :is(img, video):not([data-rendered] *) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :is(button, input, optgroup, select, textarea):not([data-rendered] *) {
+    font-family: inherit;
+    font-size: 100%;
+    font-weight: inherit;
+    line-height: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+  }
+
+  button:not([data-rendered] *),
+  [role="button"]:not([data-rendered] *) {
+    cursor: pointer;
+    background-color: transparent;
+    background-image: none;
+  }
+
+  :is(button, [type="button"], [type="reset"], [type="submit"]):not([data-rendered] *) {
+    -webkit-appearance: button;
+  }
+
+  /*
+   * Preflight's anchor reset, re-applied only outside [data-rendered] so
+   * Tailwind utilities (`text-gray-300`, etc.) cascade onto app-chrome links
+   * without affecting WordPress content anchors.
+   */
+  a:not([data-rendered] *) {
+    color: inherit;
+    text-decoration: inherit;
+  }
+}
+
+:root {
+  --background: 200, 200, 200;
+  --foreground: 0, 0, 0;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

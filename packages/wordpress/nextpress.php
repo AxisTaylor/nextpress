@@ -126,8 +126,6 @@ function load_graphql_includes() {
     $include_directory_path = get_includes_directory();
 
     // Load WPGraphQL integration classes
-    require_once $include_directory_path . 'class-model.php';
-    require_once $include_directory_path . 'class-dataloader.php';
     require_once $include_directory_path . 'class-schema.php';
 }
 
@@ -150,7 +148,7 @@ function init_graphql() {
     add_filter(
         'graphql_data_loader_classes',
         function( $loaders ) {
-            $loaders['uri_assets'] = Uri_Assets\DataLoader::class;
+            $loaders['uri_assets'] = Uri_Assets\GraphQL\DataLoader\Uri_Assets_Loader::class;
 
             return $loaders;
         },

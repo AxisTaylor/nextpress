@@ -14,6 +14,7 @@ export function Navbar() {
           <Link href="/" className="hover:text-gray-300">Home</Link>
           <Link href="/shop" className="hover:text-gray-300">Shop</Link>
           <Link href="/cart" className="hover:text-gray-300">Cart</Link>
+          <Link href="/checkout" className="hover:text-gray-300">Checkout</Link>
         </div>
       </nav>
     </header>

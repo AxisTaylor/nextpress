@@ -27,7 +27,7 @@ services:
         condition: service_started
     ports:
       - "8080:8080"
-    image: bitpoke/wordpress-runtime:bedrock-php-8.1
+    image: bitpoke/wordpress-runtime:bedrock-php-8.3
     volumes:
       - ./:/app
       - ../wordpress:/app/web/app/plugins/nextpress

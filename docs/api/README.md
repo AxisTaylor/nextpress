@@ -2,21 +2,28 @@
 title: "NextPress API Reference"
 description: "Complete API reference for NextPress components, utilities, and configuration options."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, API reference, Content, HeadScripts, BodyScripts, withWCR, proxyByWCR"
+keywords: "NextPress, API reference, Content, GlobalStyles, HeadScripts, BodyScripts, AssetUpdater, withWCR, proxyByWCR"
 -->
 
 # API Reference
 
 Complete reference for all NextPress exports.
 
-## Components
+## Server Components
 
 | Export | Description |
 |--------|-------------|
-| [Content](./content.md) | Render WordPress HTML content with custom parsers |
+| [Content](./content.md) | Render WordPress HTML content with custom parsers (wraps output in `[data-rendered]`) |
+| [GlobalStyles](./global-styles.md) | Render the WordPress global stylesheet, custom CSS, and font faces (scoped to `[data-rendered]`) |
+| [Stylesheets](./stylesheets.md) | Load WordPress enqueued stylesheets with inline styles |
 | [HeadScripts](./head-scripts.md) | Load WordPress header scripts with dependency resolution |
 | [BodyScripts](./body-scripts.md) | Load WordPress footer scripts |
-| [Stylesheets](./stylesheets.md) | Load WordPress stylesheets with inline styles |
+
+## Client Components
+
+| Export | Description |
+|--------|-------------|
+| [AssetUpdater](./asset-updater.md) | Refresh server-rendered stylesheets, scripts, and global styles on client-side navigation |
 
 ## Configuration
 
@@ -28,15 +35,25 @@ Complete reference for all NextPress exports.
 ## Quick Import Reference
 
 ```tsx
-// Components
-import { Content, HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
+// Server components
+import {
+  Content,
+  GlobalStyles,
+  Stylesheets,
+  HeadScripts,
+  BodyScripts,
+} from '@axistaylor/nextpress';
+
+// Client components
+import { AssetUpdater } from '@axistaylor/nextpress/client';
+import type { AssetData } from '@axistaylor/nextpress/client';
 
 // Configuration (separate entry points)
 import { withWCR } from '@axistaylor/nextpress/withWCR';
 import { proxyByWCR } from '@axistaylor/nextpress/proxyByWCR';
 
 // Types
-import type { CustomParserCallback } from '@axistaylor/nextpress';
+import type { CustomParserCallback, GlobalStylesType } from '@axistaylor/nextpress';
 ```
 
 ## Related

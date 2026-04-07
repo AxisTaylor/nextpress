@@ -1,5 +1,5 @@
 import 'server-only';
-import { EnqueuedScript, EnqueuedStylesheet } from "@axistaylor/nextpress";
+import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType } from "@axistaylor/nextpress";
 import { cookies } from 'next/headers';
 
 /**
@@ -199,6 +199,30 @@ export async function fetchStylesAndScriptsByUri(uri: string): Promise<{
   }));
 
   return { scripts, stylesheets };
+}
+
+/**
+ * Fetch global WordPress styles (theme.json stylesheet, custom CSS, font faces).
+ * These are the same for all pages and can be cached at the route level.
+ */
+export async function fetchGlobalStyles(): Promise<GlobalStylesType> {
+  const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `query {
+        globalStyles {
+          stylesheet
+          customCss
+          renderedFontFaces
+        }
+      }`,
+    }),
+  });
+
+  const { data } = await response.json();
+
+  return data?.globalStyles || {};
 }
 
 /**

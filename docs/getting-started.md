@@ -173,6 +173,28 @@ export async function fetchAssets(uri: string) {
     stylesheets: data?.uriAssets?.stylesheets || [],
   };
 }
+
+export async function fetchGlobalStyles() {
+  const response = await fetch(GRAPHQL_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `
+        query GetGlobalStyles {
+          globalStyles {
+            stylesheet
+            customCss
+            renderedFontFaces
+          }
+        }
+      `,
+    }),
+    next: { revalidate: 60 },
+  });
+
+  const { data } = await response.json();
+  return data?.globalStyles || null;
+}
 ```
 
 ### 4. Create WordPress Layout
@@ -181,9 +203,16 @@ Create a layout that loads scripts and styles based on the current URI:
 
 ```tsx
 // app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
+import {
+  GlobalStyles,
+  HeadScripts,
+  BodyScripts,
+  Stylesheets,
+} from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
-import { fetchAssets } from '@/lib/wordpress';
+import { fetchAssets, fetchGlobalStyles } from '@/lib/wordpress';
+import { AssetUpdater } from '@/components/AssetUpdater';
+import { fetchAssetsAction } from '@/actions/fetchAssets';
 
 export default async function WordPressLayout({
   children,
@@ -194,18 +223,24 @@ export default async function WordPressLayout({
   const headersList = await headers();
   const uri = headersList.get('x-uri') || '/';
 
-  // Fetch WordPress assets for this URI
-  const { scripts, stylesheets } = await fetchAssets(uri);
+  // Fetch WordPress assets and global styles for this URI
+  const [{ scripts, stylesheets }, globalStyles] = await Promise.all([
+    fetchAssets(uri),
+    fetchGlobalStyles(),
+  ]);
 
   return (
     <html lang="en">
       <head>
+        <GlobalStyles globalStyles={globalStyles} pathname={uri} />
         <Stylesheets stylesheets={stylesheets} pathname={uri} />
         <HeadScripts scripts={scripts} pathname={uri} />
       </head>
       <body>
         <main>{children}</main>
         <BodyScripts scripts={scripts} pathname={uri} />
+        {/* Client wrapper that keeps assets in sync on client-side navigation */}
+        <AssetUpdater fetchAssets={fetchAssetsAction} />
       </body>
     </html>
   );
@@ -213,6 +248,10 @@ export default async function WordPressLayout({
 ```
 
 > **Why use a layout?** Loading scripts and stylesheets in a layout component ensures they're loaded once for all pages in that route group, improving performance. See [HeadScripts documentation](./head-scripts.md#retrieving-uri-in-layouts) for more details.
+
+> **About `AssetUpdater`:** Next.js does not re-run the server layout on client-side navigation, so the server-rendered assets would go stale as the user clicks around. `AssetUpdater` is a small client component that re-fetches the stylesheets, scripts, and global styles and swaps them in place on every navigation. It must be wrapped in a client component that reads `usePathname()` from `next/navigation` — see [AssetUpdater → Basic Usage](./api/asset-updater.md#basic-usage) for the wrapper and companion server action.
+
+> **Tailwind users:** If your project uses Tailwind's default Preflight layer on the same routes, it can override WordPress's scoped theme styles (most visibly on WooCommerce cart/checkout buttons). See [Troubleshooting → Tailwind Preflight Overriding WordPress Styles](./troubleshooting.md#tailwind-preflight-overriding-wordpress-styles) for the recommended workarounds.
 
 ### 5. Create Page Component
 

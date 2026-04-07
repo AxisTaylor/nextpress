@@ -40,6 +40,7 @@ export function Stylesheets({ stylesheets, instance = 'default', pathname: _path
 
   return (
     <Fragment>
+      <Style id="nextpress-stylesheets-start">{`/* nextpress:stylesheets-start */`}</Style>
       {stylesheets.map((stylesheet) => {
         const { handle, src } = stylesheet;
 
@@ -66,16 +67,17 @@ export function Stylesheets({ stylesheets, instance = 'default', pathname: _path
               </Style>
             )}
             {href && (
-              <Link rel="stylesheet" href={href} id={handle as string} precedence="medium" />
+              <Link rel="stylesheet" href={href} id={`${handle}-css`} precedence="medium" />
             )}
             {stylesheet.after && (
-              <Style id={`${handle}-after`} precedence="high" href={href || undefined}>
+              <Style id={`${handle}-inline-css`} precedence="high" href={href || undefined}>
                 {scopeInlineStyles(stylesheet.after.join(''))}
               </Style>
             )}
           </Fragment>
         );
       })}
+      <Style id="nextpress-stylesheets-end">{`/* nextpress:stylesheets-end */`}</Style>
     </Fragment>
   );
 }

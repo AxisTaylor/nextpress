@@ -47,5 +47,5 @@ export function Content({ content, parser, instance = 'default', linksAs = 'a' a
     });
   }
 
-  return (<div data-content="">{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
+  return (<div data-rendered="">{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
 }
