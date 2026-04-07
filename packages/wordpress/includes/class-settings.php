@@ -99,6 +99,13 @@ class Settings {
 				'type'    => 'checkbox',
 				'default' => 'on',
 			),
+			array(
+				'name'    => 'enable_theme_url_transforms',
+				'label'   => __( 'Transform Theme Asset URLs', 'nextpress' ),
+				'desc'    => __( 'Transform theme file URLs (used by globalStyles.renderedFontFaces) to NextPress proxy placeholders so font files load through your Next.js proxy instead of hitting WordPress directly. Required for fonts and theme assets to load correctly in headless environments.', 'nextpress' ),
+				'type'    => 'checkbox',
+				'default' => 'on',
+			),
 		);
 
 		// Add WooCommerce field only if WooCommerce is active

@@ -60,6 +60,10 @@ export default async function WordPressLayout({ children }) {
 }
 ```
 
+## Marker Tags
+
+`Stylesheets` emits two zero-byte marker `<style>` tags around its output: `id="nextpress-stylesheets-start"` and `id="nextpress-stylesheets-end"`. These are the boundaries [AssetUpdater](./asset-updater.md) uses to clear and re-insert the stylesheet block on client-side navigation. You should not need to interact with them directly — just leave them in the DOM.
+
 ## Features
 
 ### Inline Styles

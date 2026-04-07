@@ -120,7 +120,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
     const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-internal-assets\/(.*)/, '$1');
     const assetUrl = `${instance.wpSiteUrl}/${assetPath}`;
 
-    // For CSS files, scope styles to [data-content] to prevent leaking into app layout
+    // For CSS files, scope styles to [data-rendered] to prevent leaking into app layout
     if (assetPath.endsWith('.css')) {
       const response = await fetch(assetUrl);
       if (!response.ok) {
@@ -147,7 +147,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
     const assetPath = nextPath.replace(/^\/atx\/[^/]+\/wp-assets\/(.*)/, '$1');
     const assetUrl = `${instance.wpHomeUrl}/${assetPath}`;
 
-    // For CSS files, scope styles to [data-content] to prevent leaking into app layout
+    // For CSS files, scope styles to [data-rendered] to prevent leaking into app layout
     if (assetPath.endsWith('.css')) {
       const response = await fetch(assetUrl);
       if (!response.ok) {

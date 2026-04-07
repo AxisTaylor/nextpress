@@ -67,6 +67,16 @@ export type EnqueuedScript = {
   version?: Maybe<Scalars['String']['output']>;
 };
 
+export type GlobalStylesType = {
+  __typename?: 'GlobalStyles';
+  /** The full global stylesheet generated from theme.json. */
+  stylesheet?: Maybe<Scalars['String']['output']>;
+  /** Custom CSS from the WordPress Customizer and theme.json. */
+  customCss?: Maybe<Scalars['String']['output']>;
+  /** Rendered @font-face CSS declarations from theme.json. */
+  renderedFontFaces?: Maybe<Scalars['String']['output']>;
+};
+
 export type EnqueuedStylesheet = {
   __typename?: 'EnqueuedStylesheet';
   /** The inline code to be run after the asset is loaded. */

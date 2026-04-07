@@ -101,13 +101,19 @@ export default async function WordPressLayout({ children }) {
 
 For each header script, HeadScripts renders (in order):
 
-1. **`extraData`** - Localized script data (from `wp_localize_script`)
-2. **`before`** - Inline script before the main script
+1. **`extraData`** (id `{handle}-js-extra`) - Localized script data (from `wp_localize_script`)
+2. **`before`** (id `{handle}-js-before`) - Inline script before the main script
 3. **NextPress config** - Automatically injected after `wp-api-fetch` for proxy URL configuration
-4. **Main script** - The script `src` proxied through Next.js
-5. **`after`** - Inline script after the main script
+4. **Main script** (id `{handle}`) - The script `src` proxied through Next.js
+5. **`after`** (id `{handle}-js-after`) - Inline script after the main script
+
+The `-js-extra` / `-js-before` / `-js-after` suffixes match WordPress's own `wp_enqueue_script` naming convention, so client-side consumers (like [AssetUpdater](./asset-updater.md)) can reliably target individual inline fragments — e.g. to run `processWcSettings()` after the `wc-settings-js-extra` block has executed.
 
 All rendered with `strategy="beforeInteractive"`.
+
+## Marker Tags
+
+`HeadScripts` brackets its output with two zero-byte marker scripts: `id="nextpress-head-scripts-start"` and `id="nextpress-head-scripts-end"`. [AssetUpdater](./asset-updater.md) uses these as the clear-and-refill boundary on client-side navigation.
 
 ## URL Proxying
 

@@ -8,7 +8,7 @@
 namespace Tests\Integration;
 
 use Tests\Support\NextPressTestCase;
-use NextPress\Uri_Assets\Model;
+use NextPress\Uri_Assets\GraphQL\Model\Uri_Assets as Model;
 
 /**
  * Class ModelTest

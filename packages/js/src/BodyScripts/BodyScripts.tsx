@@ -68,6 +68,9 @@ export function BodyScripts({ scripts, instance = 'default', pathname = '' }: Bo
 
   return (
     <>
+      <Script id="nextpress-body-scripts-start" strategy="afterInteractive">
+        {`/* nextpress:body-scripts-start */`}
+      </Script>
       {footerScripts.map((script) => {
         // Transform src URL
         let src = '';
@@ -110,14 +113,14 @@ export function BodyScripts({ scripts, instance = 'default', pathname = '' }: Bo
           <Fragment key={handle}>
             {extraData && (
               <Script
-                id={`${handle}-extra`}
+                id={`${handle}-js-extra`}
                 strategy="afterInteractive"
                 dangerouslySetInnerHTML={{ __html: extraData }}
               />
             )}
             {beforeScript && (
               <Script
-                id={`${handle}-before`}
+                id={`${handle}-js-before`}
                 strategy="afterInteractive"
                 dangerouslySetInnerHTML={{ __html: beforeScript }}
               />
@@ -131,7 +134,7 @@ export function BodyScripts({ scripts, instance = 'default', pathname = '' }: Bo
             )}
             {afterScript && (
               <Script
-                id={`${handle}-after`}
+                id={`${handle}-js-after`}
                 strategy="afterInteractive"
                 dangerouslySetInnerHTML={{ __html: afterScript }}
               />
@@ -139,6 +142,9 @@ export function BodyScripts({ scripts, instance = 'default', pathname = '' }: Bo
           </Fragment>
         );
       })}
+      <Script id="nextpress-body-scripts-end" strategy="afterInteractive">
+        {`/* nextpress:body-scripts-end */`}
+      </Script>
     </>
   );
 }

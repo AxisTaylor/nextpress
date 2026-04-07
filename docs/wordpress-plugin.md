@@ -101,6 +101,30 @@ query GetAssets($uri: String!) {
 | `before` | `String` | Inline CSS before stylesheet |
 | `after` | `String` | Inline CSS after stylesheet |
 
+## globalStyles Query
+
+The plugin also exposes a `globalStyles` query that returns the theme's compiled global stylesheet, Customizer custom CSS, and rendered font faces. This is the input consumed by the [`GlobalStyles`](./api/global-styles.md) React component to mirror `theme.json` presets, layout styles, and web fonts on the frontend.
+
+```graphql
+query GetGlobalStyles {
+  globalStyles {
+    stylesheet
+    customCss
+    renderedFontFaces
+  }
+}
+```
+
+### GlobalStyles Type
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `stylesheet` | `String` | Output of `wp_get_global_stylesheet()` — theme.json presets, layout styles, block defaults |
+| `customCss` | `String` | Customizer custom CSS from `wp_get_custom_css()` |
+| `renderedFontFaces` | `String` | Output of `wp_print_font_faces()` for theme-registered web fonts |
+
+Ported from [rtCamp/snapwp-helper](https://github.com/rtCamp/snapwp-helper)'s `GlobalStyles` resolver.
+
 ## Settings Page
 
 Navigate to **Settings > NextPress** in WordPress admin.
@@ -130,6 +154,7 @@ Configure NextPress behavior for headless environments:
 | **Replace wp-api-fetch Script** | Replace WordPress core `wp-api-fetch` with NextPress version for proper nonce handling and API routing through your Next.js proxy | On |
 | **Replace WooCommerce Scripts** | (WooCommerce only) Replace WooCommerce scripts with versions using fresh nonces. Fixes stale nonce issues with WooCommerce Store API | On |
 | **Transform Stripe Gateway URLs** | (WooCommerce Stripe only) Transform Stripe Gateway URLs to use NextPress proxy placeholders. Required for Stripe payments in headless environments | On |
+| **Enable Theme URL Transforms** | Rewrite `theme_file_uri`, `stylesheet_directory_uri`, and `template_directory_uri` to `__NEXTPRESS_ASSETS__` placeholders in the `globalStyles` response. Required for theme-registered web fonts (and other theme assets referenced from `theme.json`) to load through the NextPress proxy instead of hitting the raw WordPress origin (which would fail CORS). | On |
 
 ## CORS Filters
 
@@ -203,6 +228,7 @@ $value = nextpress_get_setting('enable_cors', 'off');
 - `enable_custom_api_fetch` - wp-api-fetch replacement (`'on'` or `'off'`)
 - `enable_custom_wc_scripts` - WooCommerce script replacement (`'on'` or `'off'`)
 - `enable_stripe_url_transforms` - Stripe URL transforms (`'on'` or `'off'`)
+- `enable_theme_url_transforms` - Theme URL placeholder rewrites in `globalStyles` (`'on'` or `'off'`)
 
 ## WooCommerce Integration
 

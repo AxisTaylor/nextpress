@@ -31,10 +31,13 @@ export default function Page({ content }: { content: string }) {
 
 The `Content` component:
 
-1. **Parses HTML** - Uses `html-react-parser` to convert HTML string to React elements
-2. **Decodes Entities** - Automatically decodes HTML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)
-3. **Fixes Tables** - Wraps table rows in `<tbody>` if missing (required by React)
-4. **Preserves Attributes** - Maintains `data-*` attributes, `aria-*` attributes, and class names
+1. **Wraps output in `[data-rendered]`** - The parsed HTML is rendered inside `<div data-rendered>…</div>`. This attribute is the scope root used by [GlobalStyles](./global-styles.md) and any stylesheets piped through [`proxyByWCR`](./proxy-by-wcr.md), so WordPress styles apply only to this subtree and do not leak into your application chrome (navbar, footer, etc.).
+2. **Parses HTML** - Uses `html-react-parser` to convert HTML string to React elements
+3. **Decodes Entities** - Automatically decodes HTML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)
+4. **Fixes Tables** - Wraps table rows in `<tbody>` if missing (required by React)
+5. **Preserves Attributes** - Maintains `data-*` attributes, `aria-*` attributes, and class names
+
+> **Note on styling:** If you use Tailwind's default Preflight layer on the same routes, its element-level resets (`a { color: inherit }`, etc.) can override the WordPress scoped global stylesheet inside `[data-rendered]`. See [Troubleshooting → Tailwind Preflight Overriding WordPress Styles](../troubleshooting.md#tailwind-preflight-overriding-wordpress-styles).
 
 ## Custom Parsers
 

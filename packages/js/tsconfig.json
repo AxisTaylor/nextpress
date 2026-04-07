@@ -15,7 +15,7 @@
         "@/*": ["./src/*"]
       },
     },
-    "include": ["src/**/*.ts", "src/**/*.tsx",],
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/GlobalStyles/GlobalStyles.tsx",],
     "exclude": [
       "node_modules/**/*",
       "src/**/*.spec.ts",

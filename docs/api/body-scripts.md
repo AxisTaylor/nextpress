@@ -79,12 +79,18 @@ export default async function WordPressLayout({ children }) {
 
 For each footer script, BodyScripts renders (in order):
 
-1. **`extraData`** - Localized script data with proxy placeholder replacement
-2. **`before`** - Inline script (with `wc-settings` URL transformation for WooCommerce)
-3. **Main script** - The script `src` (external scripts loaded directly, WordPress assets proxied)
-4. **`after`** - Inline script after the main script
+1. **`extraData`** (id `{handle}-js-extra`) - Localized script data with proxy placeholder replacement
+2. **`before`** (id `{handle}-js-before`) - Inline script (with `wc-settings` URL transformation for WooCommerce)
+3. **Main script** (id `{handle}`) - The script `src` (external scripts loaded directly, WordPress assets proxied)
+4. **`after`** (id `{handle}-js-after`) - Inline script after the main script
+
+The `-js-extra` / `-js-before` / `-js-after` ID suffixes match WordPress's `wp_enqueue_script` naming so [AssetUpdater](./asset-updater.md) can reliably locate each fragment on client-side navigation — in particular so `processWcSettings()` can run immediately after the `wc-settings-js-extra` block defines `window.wcSettings`.
 
 All rendered with `strategy="afterInteractive"`.
+
+## Marker Tags
+
+`BodyScripts` brackets its output with two zero-byte marker scripts: `id="nextpress-body-scripts-start"` and `id="nextpress-body-scripts-end"`. [AssetUpdater](./asset-updater.md) uses these as the clear-and-refill boundary on client-side navigation.
 
 ## WooCommerce Compatibility
 

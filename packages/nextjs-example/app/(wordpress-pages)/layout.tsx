@@ -3,12 +3,15 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 
-import { fetchStylesAndScriptsByUri } from '@/lib/utils';
+import { fetchStylesAndScriptsByUri, fetchGlobalStyles } from '@/lib/utils';
+import { fetchAssets } from '@/actions/fetchAssets';
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Stylesheets, HeadScripts, BodyScripts } from "@axistaylor/nextpress";
+import { AssetUpdater } from "@/components/AssetUpdater";
+import { GlobalStyles, Stylesheets, HeadScripts, BodyScripts } from "@axistaylor/nextpress";
 
-import "@/app/globals.css";
+
+import "@/app/wordpress.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,11 +27,15 @@ export default async function WordPressLayout({
   children,
 }: Readonly<PropsWithChildren>) {
   const uri = (await headers()).get('x-uri') || '/';
-  const { stylesheets, scripts } = await fetchStylesAndScriptsByUri(uri);
+  const [{ stylesheets, scripts }, globalStyles] = await Promise.all([
+    fetchStylesAndScriptsByUri(uri),
+    fetchGlobalStyles(),
+  ]);
 
   return (
     <html lang="en">
       <head>
+        <GlobalStyles globalStyles={globalStyles} pathname={uri} />
         <Stylesheets stylesheets={stylesheets} pathname={uri} />
         <HeadScripts scripts={scripts} pathname={uri} />
       </head>
@@ -38,6 +45,7 @@ export default async function WordPressLayout({
           {children}
         </main>
         <BodyScripts scripts={scripts} pathname={uri} />
+        <AssetUpdater fetchAssets={fetchAssets} pathname={uri} />
         <Footer />
       </body>
     </html>

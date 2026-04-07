@@ -1,0 +1,419 @@
+import { useEffect, useRef } from 'react';
+import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum } from '@/types';
+import { scopeInlineStyles } from '@/utils/scopeStyles';
+import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
+
+export interface AssetData {
+  stylesheets: EnqueuedStylesheet[];
+  scripts: EnqueuedScript[];
+  globalStyles?: GlobalStylesType | null;
+}
+
+export interface AssetUpdaterProps {
+  /**
+   * The current pathname being rendered.
+   */
+  pathname: string;
+  /**
+   * The WordPress instance slug for proxy routing.
+   */
+  instance?: string;
+  /**
+   * Async function that fetches asset data for a given URI.
+   * This must be implemented by the consuming app (typically as a
+   * server action or API route call) since direct GraphQL calls
+   * require server-side credentials.
+   */
+  fetchAssets: (uri: string) => Promise<AssetData>;
+}
+
+const isInternalRoute = /^\/wp-(?:includes|admin)\//;
+
+/**
+ * Extracts the path from a URL, removing the protocol and domain.
+ */
+function extractPath(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Transforms a WordPress asset URL to route through the NextPress proxy.
+ */
+function transformAssetUrl(src: string, instance: string): string {
+  const path = extractPath(src);
+  const prefix = isInternalRoute.test(path) ? 'wp-internal-assets' : 'wp-assets';
+  return `/atx/${instance}/${prefix}${path}`;
+}
+
+/**
+ * Joins inline script/style content that may be a string or array.
+ */
+function joinContent(
+  content: (string | null | undefined)[] | string | null | undefined,
+): string {
+  if (!content) return '';
+  if (Array.isArray(content)) return content.join('');
+  return content;
+}
+
+/**
+ * Removes all DOM elements between the given start and end marker IDs (exclusive),
+ * returning the parent element and the end marker for reinsertion.
+ */
+function clearBetweenMarkers(
+  startId: string,
+  endId: string,
+): { parent: HTMLElement; endMarker: HTMLElement } | null {
+  const startMarker = document.getElementById(startId);
+  const endMarker = document.getElementById(endId);
+  if (!startMarker || !endMarker) {
+    return null;
+  }
+
+  const parent = startMarker.parentElement;
+  if (!parent) {
+    return null;
+  }
+
+  let node = startMarker.nextSibling;
+  while (node && node !== endMarker) {
+    const next: ChildNode | null = node.nextSibling;
+    parent.removeChild(node);
+    node = next;
+  }
+
+  return { parent, endMarker: endMarker as HTMLElement };
+}
+
+/**
+ * Creates a <style> element with the given id and CSS content.
+ */
+function createStyleElement(id: string, css: string): HTMLStyleElement {
+  const el = document.createElement('style');
+  el.id = id;
+  el.textContent = css;
+  return el;
+}
+
+/**
+ * Creates a <link rel="stylesheet"> element with the given id and href.
+ */
+function createLinkElement(id: string, href: string): HTMLLinkElement {
+  const el = document.createElement('link');
+  el.id = id;
+  el.rel = 'stylesheet';
+  el.href = href;
+  return el;
+}
+
+/**
+ * Creates a <script> element with the given id and either src or inline content.
+ *
+ * For external scripts, async is disabled so scripts execute in document order
+ * (matching how WordPress enqueues them server-side). Returns a promise that
+ * resolves once the script has loaded (or immediately for inline scripts).
+ */
+function createScriptElement(
+  id: string,
+  options: { src?: string; content?: string },
+): { el: HTMLScriptElement; loaded: Promise<void> } {
+  const el = document.createElement('script');
+  el.id = id;
+
+  let loaded: Promise<void>;
+
+  if (options.src) {
+    // Disable async to preserve execution order across multiple script handles.
+    el.async = false;
+    loaded = new Promise<void>((resolve) => {
+      el.addEventListener('load', () => resolve(), { once: true });
+      el.addEventListener('error', () => resolve(), { once: true });
+    });
+    el.src = options.src;
+  } else if (options.content) {
+    el.textContent = options.content;
+    loaded = Promise.resolve();
+  } else {
+    loaded = Promise.resolve();
+  }
+
+  return { el, loaded };
+}
+
+/**
+ * Replaces the stylesheet list between the nextpress-stylesheets-start/end markers.
+ */
+function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string): void {
+  const range = clearBetweenMarkers(
+    'nextpress-stylesheets-start',
+    'nextpress-stylesheets-end',
+  );
+  if (!range) return;
+
+  const { parent, endMarker } = range;
+
+  stylesheets.forEach((stylesheet) => {
+    const handle = stylesheet.handle;
+    if (!handle) return;
+
+    if (stylesheet.before) {
+      parent.insertBefore(
+        createStyleElement(
+          `${handle}-before`,
+          scopeInlineStyles(joinContent(stylesheet.before)),
+        ),
+        endMarker,
+      );
+    }
+
+    if (stylesheet.src) {
+      parent.insertBefore(
+        createLinkElement(handle, transformAssetUrl(stylesheet.src, instance)),
+        endMarker,
+      );
+    }
+
+    if (stylesheet.after) {
+      parent.insertBefore(
+        createStyleElement(
+          `${handle}-inline-css`,
+          scopeInlineStyles(joinContent(stylesheet.after)),
+        ),
+        endMarker,
+      );
+    }
+  });
+}
+
+/**
+ * Replaces the script list between the given start/end markers.
+ */
+async function updateScripts(
+  scripts: EnqueuedScript[],
+  location: ScriptLoadingGroupEnum,
+  startId: string,
+  endId: string,
+  instance: string,
+  pathname: string,
+): Promise<void> {
+  const range = clearBetweenMarkers(startId, endId);
+  if (!range) return;
+
+  const { parent, endMarker } = range;
+
+  // Insert and wait for each script in sequence to preserve execution order.
+  // Inline scripts execute synchronously on insert; external scripts must
+  // finish loading before the next one is inserted, since later scripts
+  // (especially `-before`/`-after` inline blocks) often depend on globals
+  // defined by previous external scripts.
+  const insert = async (
+    id: string,
+    options: { src?: string; content?: string },
+  ): Promise<void> => {
+    const { el, loaded } = createScriptElement(id, options);
+    parent.insertBefore(el, endMarker);
+    await loaded;
+  };
+
+  /**
+   * Inserts an inline script and resolves only after its code has actually
+   * executed in the browser. Works by appending a synthetic event dispatch
+   * to the end of the script body and awaiting that event. Lets callers run
+   * follow-up logic (e.g. patching a global the script just defined) with a
+   * guarantee that the script's side effects are in place.
+   */
+  const insertInlineAndAwait = async (
+    id: string,
+    content: string,
+    onExecuted?: () => void,
+  ): Promise<void> => {
+    const eventName = `nextpress:inline-executed:${id}`;
+    const instrumented = `${content}\n;console.log('[AssetUpdater] inline executed:', ${JSON.stringify(id)});document.dispatchEvent(new CustomEvent(${JSON.stringify(eventName)}));`;
+    const executed = new Promise<void>((resolve) => {
+      document.addEventListener(eventName, () => {
+        console.log('[AssetUpdater] event received:', eventName);
+        resolve();
+      }, { once: true });
+    });
+    await insert(id, { content: instrumented });
+    await executed;
+    if (onExecuted) {
+      onExecuted();
+    }
+  };
+
+  const filtered = scripts.filter((script) => script.location === location);
+
+  for (const script of filtered) {
+    const handle = script.handle || script.id;
+    if (!handle) continue;
+
+    const extraData = script.extraData
+      ? replaceProxyPlaceholders(script.extraData, instance, pathname)
+      : null;
+
+    if (extraData) {
+      await insertInlineAndAwait(`${handle}-js-extra`, extraData);
+    }
+
+    const beforeScript = joinContent(script.before);
+    if (beforeScript) {
+      await insertInlineAndAwait(
+        `${handle}-js-before`,
+        beforeScript,
+        handle === 'wc-settings'
+          ? () => {
+              console.log('[AssetUpdater] processWcSettings callback fired, wcSettings:', window.wcSettings);
+              processWcSettings(instance);
+            }
+          : undefined,
+      );
+    }
+
+    if (script.src) {
+      await insert(handle, { src: transformAssetUrl(script.src, instance) });
+    }
+
+    const afterScript = joinContent(script.after);
+    if (afterScript) {
+      await insertInlineAndAwait(`${handle}-js-after`, afterScript);
+    }
+  }
+}
+
+/**
+ * Replaces the global styles elements ([data-nextpress="global"]) in the head.
+ */
+function updateGlobalStyles(
+  globalStyles: GlobalStylesType | null | undefined,
+  instance: string,
+  pathname: string,
+): void {
+  const existing = document.querySelectorAll('[data-nextpress="global"]');
+  existing.forEach((el) => el.parentElement?.removeChild(el));
+
+  if (!globalStyles) return;
+
+  const head = document.head;
+
+  if (globalStyles.renderedFontFaces) {
+    const fontFaceCss = replaceProxyPlaceholders(
+      globalStyles.renderedFontFaces
+        .replace(/<style[^>]*>/gi, '')
+        .replace(/<\/style>/gi, '')
+        .trim(),
+      instance,
+      pathname,
+    );
+    if (fontFaceCss) {
+      const el = createStyleElement('nextpress-font-faces', fontFaceCss);
+      el.setAttribute('data-nextpress', 'global');
+      head.appendChild(el);
+    }
+  }
+
+  if (globalStyles.stylesheet) {
+    const el = createStyleElement(
+      'nextpress-global-styles',
+      scopeInlineStyles(globalStyles.stylesheet),
+    );
+    el.setAttribute('data-nextpress', 'global');
+    head.appendChild(el);
+  }
+
+  if (globalStyles.customCss) {
+    const el = createStyleElement(
+      'nextpress-custom-css',
+      scopeInlineStyles(globalStyles.customCss),
+    );
+    el.setAttribute('data-nextpress', 'global');
+    head.appendChild(el);
+  }
+}
+
+/**
+ * Fires the standard page lifecycle events so WordPress-enqueued scripts
+ * that listen for them can re-initialize after a client-side navigation.
+ */
+function firePageEvents(): void {
+  document.dispatchEvent(new Event('DOMContentLoaded'));
+  window.dispatchEvent(new Event('load'));
+  document.dispatchEvent(new CustomEvent('nextpress:page-change'));
+}
+
+/**
+ * Client component that refreshes NextPress server-rendered assets
+ * (stylesheets, scripts, global styles) on client-side navigation.
+ *
+ * On initial SSR, the server components render the asset markup directly.
+ * On subsequent navigations, this component fetches fresh asset data for the
+ * new pathname, removes the old server-rendered elements, and inserts the new
+ * ones between the marker tags rendered by the server components.
+ */
+export function AssetUpdater({
+  pathname,
+  instance = 'default',
+  fetchAssets,
+}: AssetUpdaterProps) {
+  // Skip only the initial mount — the server already rendered those assets.
+  // Every effect run after the first one (including returning to the initial
+  // pathname) re-fetches and re-applies assets.
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const assets = await fetchAssets(pathname);
+        if (cancelled) return;
+
+        updateStylesheets(assets.stylesheets, instance);
+        updateGlobalStyles(assets.globalStyles, instance, pathname);
+
+        // Insert head scripts sequentially, then body scripts sequentially,
+        // so each script (inline or external) finishes executing before the
+        // next is inserted.
+        await updateScripts(
+          assets.scripts,
+          ScriptLoadingGroupEnum.HEADER,
+          'nextpress-head-scripts-start',
+          'nextpress-head-scripts-end',
+          instance,
+          pathname,
+        );
+        if (cancelled) return;
+
+        await updateScripts(
+          assets.scripts,
+          ScriptLoadingGroupEnum.FOOTER,
+          'nextpress-body-scripts-start',
+          'nextpress-body-scripts-end',
+          instance,
+          pathname,
+        );
+        if (cancelled) return;
+
+        firePageEvents();
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[AssetUpdater] Failed to update assets:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, instance, fetchAssets]);
+
+  return null;
+}
