@@ -8,8 +8,8 @@
 namespace Tests\Integration;
 
 use Tests\Support\NextPressTestCase;
-use NextPress\Uri_Assets\DataLoader;
-use NextPress\Uri_Assets\Model;
+use NextPress\Uri_Assets\GraphQL\DataLoader\Uri_Assets_Loader;
+use NextPress\Uri_Assets\GraphQL\Model\Uri_Assets;
 
 /**
  * Class DataLoaderTest
@@ -45,7 +45,7 @@ class DataLoaderTest extends NextPressTestCase
         $context = \WPGraphQL::get_app_context();
         $loader = $context->get_loader('uri_assets');
 
-        $this->assertInstanceOf(DataLoader::class, $loader);
+        $this->assertInstanceOf(Uri_Assets_Loader::class, $loader);
     }
 
     /**
@@ -59,7 +59,7 @@ class DataLoaderTest extends NextPressTestCase
         $loader = $context->get_loader('uri_assets');
         $result = $loader->load($uri);
 
-        $this->assertInstanceOf(Model::class, $result);
+        $this->assertInstanceOf(Uri_Assets::class, $result);
     }
 
     /**
