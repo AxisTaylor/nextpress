@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import Script from 'next/script';
-import { EnqueuedScript, ScriptLoadingGroupEnum } from '@/types';
+import { EnqueuedScript, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
 import { getWPInstance } from '@/config/getWPInstance';
 import { replaceProxyPlaceholders, transformWcSettings } from '@/compatibility/woocommerce';
 
@@ -92,6 +92,15 @@ export function BodyScripts({ scripts, instance = 'default', pathname = '' }: Bo
         }
 
         const handle = script.handle || script.id;
+        const isModule = String(script.type) === ScriptTypeEnum.MODULE;
+
+        // ES modules must be rendered as plain <script type="module"> tags
+        // because next/script does not support the type attribute.
+        if (isModule) {
+          return src ? (
+            <script key={handle} id={handle as string} type="module" src={src} />
+          ) : null;
+        }
 
         // Process extraData with proxy placeholder replacement
         const extraData = script.extraData

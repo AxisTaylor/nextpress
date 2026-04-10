@@ -21,6 +21,13 @@ export enum ScriptLoadingGroupEnum {
   HEADER = 'HEADER'
 }
 
+export enum ScriptTypeEnum {
+  /** A classic script loaded via <script src="..."> */
+  CLASSIC = 'CLASSIC',
+  /** An ES module loaded via <script type="module" src="..."> */
+  MODULE = 'MODULE'
+}
+
 /** The strategy to use when loading the script */
 export enum ScriptLoadingStrategyEnum {
   /** Use the script `async` attribute */
@@ -63,6 +70,8 @@ export type EnqueuedScript = {
   src?: Maybe<Scalars['String']['output']>;
   /** The loading strategy to use on the script tag */
   strategy?: Maybe<ScriptLoadingStrategyEnum | `${ScriptLoadingStrategyEnum}`>;
+  /** Whether this is a classic script or an ES module */
+  type?: Maybe<ScriptTypeEnum | `${ScriptTypeEnum}`>;
   /** The version of the enqueued script */
   version?: Maybe<Scalars['String']['output']>;
 };

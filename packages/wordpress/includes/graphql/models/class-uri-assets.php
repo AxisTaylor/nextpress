@@ -13,6 +13,7 @@ use WPGraphQL\Model\Model;
 use GraphQL\Error\UserError;
 use NextPress\Uri_Assets\GraphQL\Utils\WP_Assets;
 
+
 /**
  * Class Uri_Assets
  *
@@ -100,7 +101,10 @@ class Uri_Assets extends Model {
 	public static function all_dependencies_in_footer( \_WP_Dependency $script ) {
 		$dependencies = $script->deps;
 		foreach ( $dependencies as $handle ) {
-			$dependency = wp_scripts()->registered[ $handle ];
+			$dependency = wp_scripts()->registered[ $handle ] ?? null;
+			if ( null === $dependency ) {
+				continue;
+			}
 			if ( 1 === self::get_script_location( $dependency ) ) {
 				continue;
 			}
@@ -221,13 +225,17 @@ class Uri_Assets extends Model {
 	}
 
 	/**
-	 * Simulates WP template rendering and returns the enqueued asset queue.
+	 * Simulates WP template rendering to trigger all asset enqueue hooks.
 	 *
-	 * Fires wp_head, renders content, fires sidebar and wp_footer to trigger
-	 * all asset enqueue hooks, then flattens and returns the queue.
+	 * Fires wp_head, renders the post content (which processes blocks and
+	 * enqueues their scripts/styles/modules), fires sidebar and wp_footer,
+	 * then discards all output. After this call, $wp_scripts, $wp_styles,
+	 * and wp_script_modules() contain the full set of enqueued assets for
+	 * the resolved URI.
 	 *
+	 * @return void
 	 */
-	public function setup() {
+	protected function simulate_render() {
 		do_action( 'nextpress_pre_simulate_render' );
 
 		ob_start();
@@ -262,8 +270,13 @@ class Uri_Assets extends Model {
 				return $this->path;
 			},
 			'enqueuedScriptsQueue'     => function () {
-				global $wp_scripts;
 
+				$this->simulate_render();
+
+				// Build scripts list.
+				WP_Assets::collect_script_modules_queue();
+
+				global $wp_scripts;
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_scripts->queue ?? [], $wp_scripts );
 
 				$wp_scripts->reset();
@@ -274,6 +287,7 @@ class Uri_Assets extends Model {
 			'enqueuedStylesheetsQueue' => function () {
 				global $wp_styles;
 
+				$this->simulate_render();
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );
 
 				$wp_styles->reset();

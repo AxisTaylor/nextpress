@@ -37,6 +37,7 @@ class Schema {
 
 		// Utils.
 		require_once $graphql_path . 'utils/class-wp-assets.php';
+		require_once $graphql_path . 'utils/class-nextpress-script-modules.php';
 
 		// DataLoaders.
 		require_once $graphql_path . 'dataloaders/class-uri-assets-loader.php';
@@ -46,6 +47,7 @@ class Schema {
 
 		// Enums.
 		require_once $types_path . 'enum/class-script-loading-group-enum.php';
+		require_once $types_path . 'enum/class-script-type-enum.php';
 
 		// Object types and field extensions.
 		require_once $types_path . 'object/class-enqueued-asset-fields.php';
@@ -61,6 +63,7 @@ class Schema {
 	 */
 	public function register_schema() {
 		Type\Enum\Script_Loading_Group_Enum::register();
+		Type\Enum\Script_Type_Enum::register();
 		Type\Object\Enqueued_Asset_Fields::register();
 		Type\Object\Uri_Assets::register();
 		Type\Object\Global_Styles::register();

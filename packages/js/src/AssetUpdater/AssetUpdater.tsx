@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum } from '@/types';
+import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
 
@@ -119,16 +119,22 @@ function createLinkElement(id: string, href: string): HTMLLinkElement {
  */
 function createScriptElement(
   id: string,
-  options: { src?: string; content?: string },
+  options: { src?: string; content?: string; isModule?: boolean },
 ): { el: HTMLScriptElement; loaded: Promise<void> } {
   const el = document.createElement('script');
   el.id = id;
 
+  if (options.isModule) {
+    el.type = 'module';
+  }
+
   let loaded: Promise<void>;
 
   if (options.src) {
-    // Disable async to preserve execution order across multiple script handles.
-    el.async = false;
+    if (!options.isModule) {
+      // Disable async to preserve execution order across multiple script handles.
+      el.async = false;
+    }
     loaded = new Promise<void>((resolve) => {
       el.addEventListener('load', () => resolve(), { once: true });
       el.addEventListener('error', () => resolve(), { once: true });
@@ -212,7 +218,7 @@ async function updateScripts(
   // defined by previous external scripts.
   const insert = async (
     id: string,
-    options: { src?: string; content?: string },
+    options: { src?: string; content?: string; isModule?: boolean },
   ): Promise<void> => {
     const { el, loaded } = createScriptElement(id, options);
     parent.insertBefore(el, endMarker);
@@ -251,6 +257,16 @@ async function updateScripts(
   for (const script of filtered) {
     const handle = script.handle || script.id;
     if (!handle) continue;
+
+    const isModule = String(script.type) === ScriptTypeEnum.MODULE;
+
+    // ES modules don't have inline extra/before/after scripts — just load the src.
+    if (isModule) {
+      if (script.src) {
+        await insert(handle, { src: transformAssetUrl(script.src, instance), isModule: true });
+      }
+      continue;
+    }
 
     const extraData = script.extraData
       ? replaceProxyPlaceholders(script.extraData, instance, pathname)

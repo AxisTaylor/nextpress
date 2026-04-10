@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import Script from 'next/script';
-import { EnqueuedScript, ScriptLoadingGroupEnum } from '@/types';
+import { EnqueuedScript, ScriptLoadingGroupEnum, ScriptLoadingStrategyEnum, ScriptTypeEnum } from '@/types';
 import { getNextPressConfigScript } from '@/compatibility/wordpress';
 
 /**
@@ -32,10 +32,15 @@ export interface HeadScriptsProps {
 }
 
 /**
- * Server component that renders WordPress header scripts using next/script.
- * Scripts are rendered with strategy="beforeInteractive" to execute in document
- * order before any Next.js code runs. Dependency ordering is handled server-side
- * by the WordPress assetsByUri GraphQL query.
+ * Server component that renders WordPress header scripts.
+ *
+ * Classic scripts without a defer/async strategy use next/script with
+ * strategy="beforeInteractive" so they execute in document order before
+ * React hydration.
+ *
+ * Scripts with strategy="defer" or type="module" are rendered as plain
+ * <script> tags with the appropriate attributes, since next/script does
+ * not support the `defer` or `type` attributes.
  */
 export function HeadScripts({ scripts, instance = 'default', pathname: _pathname = '' }: HeadScriptsProps) {
   // Filter for header scripts only
@@ -67,7 +72,53 @@ export function HeadScripts({ scripts, instance = 'default', pathname: _pathname
         }
 
         const handle = script.handle || script.id;
+        const isModule = String(script.type) === ScriptTypeEnum.MODULE;
+        const isDeferred = String(script.strategy) === ScriptLoadingStrategyEnum.DEFER;
+        const isAsync = String(script.strategy) === ScriptLoadingStrategyEnum.ASYNC;
 
+        // ES modules: plain <script type="module">
+        if (isModule) {
+          return src ? (
+            <script key={handle} id={handle as string} type="module" src={src} />
+          ) : null;
+        }
+
+        // Deferred/async scripts: plain <script> with the appropriate attribute.
+        // next/script doesn't support defer/async attributes, and
+        // beforeInteractive would execute them before the DOM is parsed,
+        // which breaks view scripts that need to find block elements.
+        if ((isDeferred || isAsync) && src) {
+          return (
+            <Fragment key={handle}>
+              {script.extraData && (
+                <script
+                  id={`${handle}-js-extra`}
+                  dangerouslySetInnerHTML={{ __html: script.extraData }}
+                />
+              )}
+              {script.before && (
+                <script
+                  id={`${handle}-js-before`}
+                  dangerouslySetInnerHTML={{ __html: joinScriptContent(script.before) }}
+                />
+              )}
+              <script
+                id={handle as string}
+                src={src}
+                defer={isDeferred || undefined}
+                async={isAsync || undefined}
+              />
+              {script.after && (
+                <script
+                  id={`${handle}-js-after`}
+                  dangerouslySetInnerHTML={{ __html: joinScriptContent(script.after) }}
+                />
+              )}
+            </Fragment>
+          );
+        }
+
+        // All other classic scripts: next/script beforeInteractive
         return (
           <Fragment key={handle}>
             {script.extraData && (
