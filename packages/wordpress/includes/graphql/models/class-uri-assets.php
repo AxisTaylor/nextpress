@@ -273,8 +273,16 @@ class Uri_Assets extends Model {
 
 				$this->simulate_render();
 
-				// Build scripts list.
-				WP_Assets::collect_script_modules_queue();
+				// Fold enqueued script modules into $wp_scripts so they
+				// appear alongside classic scripts. Wrapped in try/catch
+				// so a failure here doesn't break the classic scripts list.
+				try {
+					WP_Assets::collect_script_modules_queue();
+				} catch ( \Throwable $e ) {
+					graphql_debug(
+						sprintf( 'collect_script_modules_queue failed: %s', $e->getMessage() )
+					);
+				}
 
 				global $wp_scripts;
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_scripts->queue ?? [], $wp_scripts );
