@@ -1,9 +1,11 @@
 export * from '@/types';
+export * from '@/config/getWPInstance';
 export * from '@/Content';
 export * from '@/Stylesheets';
 export * from '@/GlobalStyles';
 export * from '@/WPScripts';
-export * from '@/HeadScripts';
-export * from '@/BodyScripts';
+export * from '@/WPHead';
+export * from '@/WPFooter';
 export * from '@/ImportMap';
-export * from '@/parsers';
+export { createUrlRewritingParser, type UrlRewritingParserOptions } from '@/parsers/urlRewritingParser';
+export { nextImageParser } from '@/parsers/nextImageParser';

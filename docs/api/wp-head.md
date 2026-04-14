@@ -1,20 +1,22 @@
 <!--
-title: "HeadScripts Component"
+title: "WPHead Component"
 description: "Render WordPress header scripts, global styles, and import maps as server components."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, HeadScripts, WordPress, scripts, modules, import map, global styles, server component"
+keywords: "NextPress, WPHead, WordPress, scripts, modules, import map, global styles, server component"
 -->
 
-# HeadScripts
+# WPHead
 
-The `HeadScripts` component is a server component wrapper that renders WordPress head assets: global styles, the script module import map, and header scripts.
+The `WPHead` component is a server component wrapper that renders WordPress head assets: global styles, the script module import map, and header scripts.
 
-It combines [`GlobalStyles`](./global-styles.md), [`ImportMap`](#import-map), and [`WPScripts`](#wpscripts) into a single component for the `<head>`.
+> **Deprecated alias:** `HeadScripts` is still exported as an alias for backwards compatibility, but new code should use `WPHead`.
+
+It combines [`GlobalStyles`](./global-styles.md), [`Stylesheets`](./stylesheets.md), [`ImportMap`](./import-map.md), and [`WPScripts`](./wp-scripts.md) into a single component for the `<head>`.
 
 ## Basic Usage
 
 ```tsx
-import { HeadScripts, Stylesheets, BodyScripts } from '@axistaylor/nextpress';
+import { WPHead, WPFooter } from '@axistaylor/nextpress';
 
 export default async function WordPressLayout({ children }) {
   const { scripts, stylesheets, importMap } = await fetchAssets(uri);
@@ -23,9 +25,9 @@ export default async function WordPressLayout({ children }) {
   return (
     <html>
       <head>
-        <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts
+        <WPHead
           scripts={scripts}
+          stylesheets={stylesheets}
           globalStyles={globalStyles}
           importMap={importMap}
           pathname={uri}
@@ -33,7 +35,7 @@ export default async function WordPressLayout({ children }) {
       </head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -52,7 +54,7 @@ export default async function WordPressLayout({ children }) {
 
 ## What It Renders
 
-HeadScripts renders three sub-components in order:
+WPHead renders three sub-components in order:
 
 1. **`<GlobalStyles>`** — Scoped theme.json stylesheet, font faces, and custom CSS
 2. **`<ImportMap>`** — `<script type="importmap">` for ES module bare specifier resolution
@@ -60,7 +62,7 @@ HeadScripts renders three sub-components in order:
 
 ## Script Types
 
-HeadScripts (via WPScripts) handles four types of scripts:
+WPHead (via WPScripts) handles four types of scripts:
 
 | Type | Rendering | Strategy |
 |------|-----------|----------|
@@ -71,7 +73,7 @@ HeadScripts (via WPScripts) handles four types of scripts:
 
 ## Import Map
 
-When `importMap` is provided, HeadScripts renders a `<script type="importmap">` before any scripts. This allows ES modules (like `@wordpress/interactivity` view scripts) to resolve bare specifiers:
+When `importMap` is provided, WPHead renders a `<script type="importmap">` before any scripts. This allows ES modules (like `@wordpress/interactivity` view scripts) to resolve bare specifiers:
 
 ```json
 {
@@ -88,7 +90,7 @@ The import map entries come from the `assetsByUri` GraphQL query's `importMap(sc
 On WordPress multisite, plugin assets may be served from a different domain than the content site (e.g. `axistaylor.local` vs `woographql.local`). WPScripts automatically detects this via `isScriptForAnotherInstance()` and routes the script through the correct instance's proxy:
 
 ```tsx
-<HeadScripts scripts={scripts} instance="demo" pathname={uri} />
+<WPHead scripts={scripts} instance="demo" pathname={uri} />
 ```
 
 ## Inline Script Processing
@@ -102,7 +104,7 @@ WPScripts brackets its output with marker scripts (`nextpress-head-scripts-start
 ## Related
 
 - [WPScripts](./wp-scripts.md) - Core script rendering component
-- [BodyScripts](./body-scripts.md) - Footer script loading
+- [WPFooter](./wp-footer.md) - Footer script loading
 - [GlobalStyles](./global-styles.md) - WordPress global styles
 - [ImportMap](./import-map.md) - Script module import map
 - [Stylesheets](./stylesheets.md) - Stylesheet loading

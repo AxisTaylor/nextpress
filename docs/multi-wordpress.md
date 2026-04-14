@@ -64,14 +64,12 @@ Each instance accepts the same options as single-instance configuration:
 Pass the `instance` prop to specify which WordPress backend to use:
 
 ```tsx
-import { Content } from '@axistaylor/nextpress';
-import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
+import { Content, WPHead, WPFooter } from '@axistaylor/nextpress';
 
 // Use the blog instance
 <Content content={content} instance="blog" />
-<HeadScripts scripts={scripts} instance="blog" pathname={uri} />
-<BodyScripts scripts={scripts} instance="blog" pathname={uri} />
-<Stylesheets stylesheets={stylesheets} instance="blog" pathname={uri} />
+<WPHead scripts={scripts} stylesheets={stylesheets} globalStyles={globalStyles} importMap={importMap} instance="blog" pathname={uri} />
+<WPFooter scripts={scripts} instance="blog" pathname={uri} />
 ```
 
 ### Default Instance
@@ -108,9 +106,9 @@ app/
 
 ```tsx
 // app/(blog)/layout.tsx
-import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
+import { WPHead, WPFooter } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
-import { fetchAssets } from '@/lib/wordpress';
+import { fetchAssets, fetchGlobalStyles } from '@/lib/wordpress';
 
 const INSTANCE = 'blog';
 
@@ -122,17 +120,26 @@ export default async function BlogLayout({
   const headersList = await headers();
   const uri = headersList.get('x-uri') || '/';
 
-  const { scripts, stylesheets } = await fetchAssets(uri, INSTANCE);
+  const [{ scripts, stylesheets, importMap }, globalStyles] = await Promise.all([
+    fetchAssets(uri, INSTANCE),
+    fetchGlobalStyles(INSTANCE),
+  ]);
 
   return (
     <html lang="en">
       <head>
-        <Stylesheets stylesheets={stylesheets} instance={INSTANCE} pathname={uri} />
-        <HeadScripts scripts={scripts} instance={INSTANCE} pathname={uri} />
+        <WPHead
+          scripts={scripts}
+          stylesheets={stylesheets}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          instance={INSTANCE}
+          pathname={uri}
+        />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} instance={INSTANCE} pathname={uri} />
+        <WPFooter scripts={scripts} instance={INSTANCE} pathname={uri} />
       </body>
     </html>
   );

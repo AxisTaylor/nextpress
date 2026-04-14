@@ -377,6 +377,29 @@ describe('withWCR', () => {
       const env = result.env as Record<string, string> | undefined;
       expect(env?.NEXTPRESS_WP_INSTANCES).toBeUndefined();
     });
+
+    it('should expose instance configs in config.env when instancesReadableOnClient is true', () => {
+      const nextConfig: NextConfig = {};
+      const wpConfig = {
+        main: {
+          wpDomain: 'main.example.com',
+          wpProtocol: 'https',
+        },
+      };
+      const options = {
+        frontendDomain: 'nextjs.example.com',
+        frontendProtocol: 'https',
+        instancesReadableOnClient: true,
+      };
+
+      const result = withWCR(nextConfig, wpConfig, options);
+
+      const env = result.env as Record<string, string> | undefined;
+      expect(env?.NEXTPRESS_WP_INSTANCES).toBeDefined();
+      const instances = JSON.parse(env?.NEXTPRESS_WP_INSTANCES as string);
+      expect(instances.main).toBeDefined();
+      expect(instances.main.wpDomain).toBe('main.example.com');
+    });
   });
 
   describe('configuration validation', () => {

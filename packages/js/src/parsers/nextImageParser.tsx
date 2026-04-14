@@ -1,16 +1,17 @@
 import React from 'react';
 import Image from 'next/image';
 import type { DOMNode } from 'html-react-parser';
-import type { CustomParser, ElementProps } from '@axistaylor/nextpress';
+import type { CustomParser, ElementProps } from '@/utils/parseHtml';
 
 /**
- * Custom Content parser that converts WordPress <img> tags to Next.js
+ * Optional Content parser that converts WordPress <img> tags to Next.js
  * <Image> components for automatic image optimization (WebP/AVIF).
  *
  * Passes intrinsic width/height for aspect ratio and the WP sizes
- * attribute for responsive srcset selection.
+ * attribute for responsive srcset selection. Images without width/height
+ * are skipped (left as native <img>).
  */
-export const imageParser: CustomParser = (
+export const nextImageParser: CustomParser = (
   node: DOMNode,
   props: ElementProps,
 ) => {
@@ -28,6 +29,7 @@ export const imageParser: CustomParser = (
   const height = parseInt(String(p.height || ''), 10) || 0;
   const sizes = typeof p.sizes === 'string' ? p.sizes : undefined;
 
+  // Skip images without intrinsic dimensions — can't optimize without them
   if (!width || !height) return undefined;
 
   // Collect data-* attributes

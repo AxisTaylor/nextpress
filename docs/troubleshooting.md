@@ -134,8 +134,8 @@ query GetAssets($uri: String!) {
 
 **2. Use correct components**
 
-- `HeadScripts` for `location: 'HEADER'` scripts
-- `BodyScripts` for `location: 'FOOTER'` scripts
+- `WPHead` for `location: 'HEADER'` scripts
+- `WPFooter` for `location: 'FOOTER'` scripts
 
 ```tsx
 const headerScripts = scripts.filter(s => s.location === 'HEADER');

@@ -62,7 +62,7 @@ export function MyPageEvents() {
 Then in your layout:
 
 ```tsx
-<BodyScripts scripts={scripts} pathname={uri} />
+<WPFooter scripts={scripts} pathname={uri} />
 <MyPageEvents />
 ```
 
@@ -136,4 +136,4 @@ This works on traditional WordPress (where `defer` scripts run before `DOMConten
 
 - [AssetUpdater](./asset-updater.md) — Includes page events automatically
 - [WPScripts](./wp-scripts.md) — How scripts are rendered in head/body
-- [HeadScripts](./head-scripts.md) — Head asset wrapper
+- [WPHead](./wp-head.md) — Head asset wrapper

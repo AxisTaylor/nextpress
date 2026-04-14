@@ -52,6 +52,33 @@ export default withWCR(nextConfig, {
 });
 ```
 
+### Frontend / Global Options (`WCROptions`)
+
+The third argument to `withWCR` configures frontend behavior:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `frontendDomain` | `string` | — | Next.js frontend domain (e.g. `localhost:3000`) |
+| `frontendProtocol` | `'http' \| 'https'` | — | Frontend protocol |
+| `defaultInstance` | `string` | `'default'` | Default WordPress instance slug |
+| `formatPermalinks` | `boolean` | `true` | Enable URL rewriting in `Content` component |
+| `salt` | `string` | `'nextpress-default-salt'` | Salt for encoding backend URLs |
+| `instancesReadableOnClient` | `boolean` | `false` | Expose WordPress instance config to client-side code (see below) |
+
+#### `instancesReadableOnClient`
+
+By default, the `NEXTPRESS_WP_INSTANCES` environment variable is only available server-side to prevent leaking backend URLs to the client bundle. Set `instancesReadableOnClient: true` if you need to call `getWPInstance()`, `getAllWPInstances()`, or `getInstanceSlugs()` from client components or `'use client'` modules:
+
+```js
+export default withWCR(nextConfig, wpConfig, {
+  frontendDomain: 'localhost:3000',
+  frontendProtocol: 'http',
+  instancesReadableOnClient: true,
+});
+```
+
+> **Security note:** Enabling this exposes your WordPress domain, protocol, and URLs in the client bundle. Only enable it if your WordPress backend is publicly accessible and you need client-side access to the instance configuration.
+
 ### Multi-WordPress Instance
 
 For connecting to multiple WordPress backends:

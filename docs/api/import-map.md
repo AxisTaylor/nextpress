@@ -11,10 +11,10 @@ The `ImportMap` component renders a `<script type="importmap">` tag that maps ba
 
 ## Basic Usage
 
-`ImportMap` is typically used via [`HeadScripts`](./head-scripts.md) which renders it automatically when `importMap` is provided:
+`ImportMap` is typically used via [`WPHead`](./wp-head.md) which renders it automatically when `importMap` is provided:
 
 ```tsx
-<HeadScripts
+<WPHead
   scripts={scripts}
   globalStyles={globalStyles}
   importMap={importMap}
@@ -75,6 +75,6 @@ The `scheme` argument controls URL format:
 
 ## Related
 
-- [HeadScripts](./head-scripts.md) - Wrapper that includes ImportMap
+- [WPHead](./wp-head.md) - Wrapper that includes ImportMap
 - [WPScripts](./wp-scripts.md) - Renders module scripts that use the import map
 - [AssetUpdater](./asset-updater.md) - Updates import map on client-side navigation

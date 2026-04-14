@@ -1,8 +1,7 @@
-import { Content } from '@axistaylor/nextpress';
-import { fetchContentByUri, fetchPageSlugs } from '@/lib/utils';
-import { imageParser } from '@/parsers/imageParser';
-import Link from 'next/link';
 import { FC } from 'react';
+import { Content, nextImageParser } from '@axistaylor/nextpress';
+import { fetchContentByUri, fetchPageSlugs } from '@/lib/utils';
+import Link from 'next/link';
 
 export interface PageParams {
   params: Promise<{
@@ -33,5 +32,5 @@ export default async function Page({ params: paramsPromise }: PageParams) {
     console.error(`Failed to find page content for: ${uri}`);
     return null;
   }
-  return <Content content={content} linksAs={Link as unknown as FC<JSX.IntrinsicElements['a']>} parser={imageParser} />;
+  return <Content content={content} linksAs={Link as unknown as FC<JSX.IntrinsicElements['a']>} parsers={[nextImageParser]} />;
 }

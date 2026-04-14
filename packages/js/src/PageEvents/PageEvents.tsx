@@ -1,5 +1,3 @@
-'use client';
-
 import { usePageEvents } from '@/hooks/usePageEvents';
 
 export interface PageEventsProps {
