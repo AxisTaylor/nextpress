@@ -246,6 +246,14 @@ class Uri_Assets extends Model {
 		$this->data->contentRendered;
 		$this->data->ID;
 
+		// Block rendering populates the Style Engine with layout CSS
+		// (e.g. gallery column rules) but wp_enqueue_stored_styles() already
+		// ran during wp_head — before the blocks were rendered. Re-run it
+		// so the generated CSS (core-block-supports) gets enqueued.
+		if ( function_exists( 'wp_enqueue_stored_styles' ) ) {
+			wp_enqueue_stored_styles();
+		}
+
 		do_action( 'get_sidebar', null, [] );
 		wp_footer();
 		ob_end_clean();

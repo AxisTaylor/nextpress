@@ -5,11 +5,10 @@ import type { CustomParser, ElementProps } from '@axistaylor/nextpress';
 
 /**
  * Custom Content parser that converts WordPress <img> tags to Next.js
- * <Image> components for automatic image optimization (WebP/AVIF,
- * responsive sizing, lazy loading).
+ * <Image> components for automatic image optimization (WebP/AVIF).
  *
- * Passes through all relevant WordPress image attributes while letting
- * next/image handle srcset generation, lazy loading, and decoding.
+ * Passes intrinsic width/height for aspect ratio and the WP sizes
+ * attribute for responsive srcset selection.
  */
 export const imageParser: CustomParser = (
   node: DOMNode,
@@ -22,14 +21,16 @@ export const imageParser: CustomParser = (
   const src = p.src as string;
   if (!src) return undefined;
 
+  const alt = (p.alt as string) || '';
+  const className = (p.className as string) || undefined;
+  const style = p.style as React.CSSProperties | undefined;
   const width = parseInt(String(p.width || ''), 10) || 0;
   const height = parseInt(String(p.height || ''), 10) || 0;
+  const sizes = typeof p.sizes === 'string' ? p.sizes : undefined;
 
-  // next/image requires width + height for static images.
-  // If missing (rare in WP), use fill mode instead.
-  const useFill = !width || !height;
+  if (!width || !height) return undefined;
 
-  // Collect data-* attributes to pass through
+  // Collect data-* attributes
   const dataAttrs: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(p)) {
     if (key.startsWith('data-')) {
@@ -37,35 +38,15 @@ export const imageParser: CustomParser = (
     }
   }
 
-  // WordPress sets sizes like "(max-width: 1024px) 100vw, 1024px".
-  // next/image can use this directly via the sizes prop.
-  const sizes = typeof p.sizes === 'string'
-    ? p.sizes
-    : '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px';
-
-  if (useFill) {
-    return (
-      <Image
-        src={src}
-        alt={(p.alt as string) || ''}
-        fill
-        className={p.className as string}
-        style={p.style as React.CSSProperties}
-        sizes={sizes}
-        {...dataAttrs}
-      />
-    );
-  }
-
   return (
     <Image
       src={src}
-      alt={(p.alt as string) || ''}
+      alt={alt}
       width={width}
       height={height}
-      className={p.className as string}
-      style={p.style as React.CSSProperties}
       sizes={sizes}
+      className={className}
+      style={style}
       {...dataAttrs}
     />
   );
