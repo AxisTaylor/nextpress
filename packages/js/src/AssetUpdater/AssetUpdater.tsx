@@ -3,6 +3,7 @@ import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGrou
 import { WPImport } from '@/ImportMap';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
 import { transformAssetUrl } from '@/utils/url';
+import { firePageEvents } from '@/hooks/usePageEvents';
 import { joinScriptContent } from '@/utils/content';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
 
@@ -352,15 +353,6 @@ function updateImportMap(
   document.head.appendChild(el);
 }
 
-/**
- * Fires the standard page lifecycle events so WordPress-enqueued scripts
- * that listen for them can re-initialize after a client-side navigation.
- */
-function firePageEvents(): void {
-  document.dispatchEvent(new Event('DOMContentLoaded'));
-  window.dispatchEvent(new Event('load'));
-  document.dispatchEvent(new CustomEvent('nextpress:page-change'));
-}
 
 /**
  * Client component that refreshes NextPress server-rendered assets
@@ -384,6 +376,9 @@ export function AssetUpdater({
   useEffect(() => {
     if (!hasMounted.current) {
       hasMounted.current = true;
+      // Fire synthetic page events on initial mount so WordPress scripts
+      // that missed the real DOMContentLoaded can initialize.
+      firePageEvents();
       return;
     }
 
