@@ -1,8 +1,7 @@
 import { FC } from 'react';
-import { Content } from '@axistaylor/nextpress';
+import { Content, nextImageParser } from '@axistaylor/nextpress';
 import { fetchContentByUri, fetchPageSlugs } from '@/lib/utils';
 import Link from 'next/link';
-import { nextImageParser } from '@/lib/nextImageParser';
 
 export interface PageParams {
   params: Promise<{

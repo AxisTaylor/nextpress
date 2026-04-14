@@ -8,3 +8,4 @@ export * from '@/WPHead';
 export * from '@/WPFooter';
 export * from '@/ImportMap';
 export { createUrlRewritingParser, type UrlRewritingParserOptions } from '@/parsers/urlRewritingParser';
+export { nextImageParser } from '@/parsers/nextImageParser';

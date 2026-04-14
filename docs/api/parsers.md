@@ -12,8 +12,7 @@ The [`Content`](./content.md) component accepts a `parsers` prop — an array of
 ## Using Parsers
 
 ```tsx
-import { Content } from '@axistaylor/nextpress';
-import { nextImageParser } from '@axistaylor/nextpress/client';
+import { Content, nextImageParser } from '@axistaylor/nextpress';
 
 <Content
   content={wpContent}
@@ -34,7 +33,7 @@ Multiple parsers run in order:
 
 ### `nextImageParser`
 
-**Import:** `import { nextImageParser } from '@axistaylor/nextpress/client'`
+**Import:** `import { nextImageParser } from '@axistaylor/nextpress'`
 
 Converts WordPress `<img>` tags to Next.js `<Image>` components for automatic WebP/AVIF optimization and responsive srcset generation.
 
@@ -44,8 +43,7 @@ Converts WordPress `<img>` tags to Next.js `<Image>` components for automatic We
 - Skips images without `width`/`height` (leaves them as native `<img>`)
 
 ```tsx
-import { Content } from '@axistaylor/nextpress';
-import { nextImageParser } from '@axistaylor/nextpress/client';
+import { Content, nextImageParser } from '@axistaylor/nextpress';
 
 export default function Page({ content }) {
   return <Content content={content} parsers={[nextImageParser]} />;
