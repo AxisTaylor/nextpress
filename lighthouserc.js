@@ -70,6 +70,13 @@ module.exports = {
         'inspector-issues': 'warn',
         'third-party-cookies': 'warn',
         'total-byte-weight': 'warn',
+
+        // Checkout-specific — CLS from WC Blocks form loading,
+        // generic link text from WC templates, source maps from
+        // third-party scripts.
+        'cls-culprits-insight': 'warn',
+        'link-text': 'warn',
+        'valid-source-maps': 'warn',
       },
     },
     upload: {
