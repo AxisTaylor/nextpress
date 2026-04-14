@@ -1,5 +1,25 @@
 # @axistaylor/nextpress
 
+## 1.3.1
+
+### Patch Changes
+
+- [#20](https://github.com/AxisTaylor/nextpress/pull/20) [`895f357`](https://github.com/AxisTaylor/nextpress/commit/895f3578c9f03c42f1633d182d23640a4c4968bf) Thanks [@kidunot89](https://github.com/kidunot89)! - Fix multisite script proxy routing and update documentation.
+
+  **JavaScript package (`@axistaylor/nextpress`)**
+
+  - `isExternalScript()` now accepts an array of instance home URLs so scripts from any known WordPress instance are proxied instead of loaded directly (fixes CORS errors on multisite where plugin assets come from a different domain than the content site).
+  - New `isScriptForAnotherInstance()` utility that identifies which instance a script belongs to and routes it through the correct proxy (`/atx/{slug}/...`).
+  - Updated unit tests for the new `isExternalScript` signature and `isScriptForAnotherInstance`.
+
+  **Documentation**
+
+  - Updated Getting Started guide with `importMap` in GraphQL queries, `fetchAssetsAction` server action, `AssetUpdater` client wrapper, and the new `HeadScripts` API (`globalStyles` + `importMap` props).
+  - New `WPScripts` component documentation (core script rendering, script type handling, multisite support).
+  - New `ImportMap` component documentation (import map rendering, GraphQL query, scheme options).
+  - Updated `HeadScripts` docs to reflect wrapper pattern (GlobalStyles + ImportMap + WPScripts).
+  - Updated `BodyScripts` docs to reference WPScripts.
+
 ## 1.3.0
 
 ### Minor Changes
