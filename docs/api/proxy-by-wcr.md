@@ -254,6 +254,6 @@ Ensure Cart-Token handling is implemented (see WooCommerce section above).
 ## Related
 
 - [withWCR](./with-wcr.md) - Next.js configuration
-- [HeadScripts](./head-scripts.md) - URI retrieval in layouts
+- [WPHead](./wp-head.md) - URI retrieval in layouts
 - [Multi-WordPress Setup](../multi-wordpress.md) - Multiple backends
 - [Troubleshooting](../troubleshooting.md) - Common issues

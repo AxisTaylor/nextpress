@@ -7,7 +7,7 @@ keywords: "NextPress, AssetUpdater, client component, Next.js navigation, WordPr
 
 # AssetUpdater
 
-The `AssetUpdater` is a client component that keeps server-rendered WordPress assets in sync across client-side navigations. On the initial SSR render, `<Stylesheets>`, `<HeadScripts>`, `<BodyScripts>`, and `<GlobalStyles>` emit the asset markup for the current URI directly into the HTML response. When the user navigates to a new pathname on the same layout, `AssetUpdater` fetches fresh asset data, removes the previous marker-delimited block from the DOM, and re-inserts the new stylesheets, scripts, and global styles in place — preserving execution order and firing the standard page lifecycle events.
+The `AssetUpdater` is a client component that keeps server-rendered WordPress assets in sync across client-side navigations. On the initial SSR render, `<Stylesheets>`, `<WPHead>`, `<WPFooter>`, and `<GlobalStyles>` emit the asset markup for the current URI directly into the HTML response. When the user navigates to a new pathname on the same layout, `AssetUpdater` fetches fresh asset data, removes the previous marker-delimited block from the DOM, and re-inserts the new stylesheets, scripts, and global styles in place — preserving execution order and firing the standard page lifecycle events.
 
 ## Basic Usage
 
@@ -44,25 +44,29 @@ Then use the wrapper in your WordPress layout:
 
 ```tsx
 // app/(wordpress-pages)/layout.tsx
-import { GlobalStyles, Stylesheets, HeadScripts, BodyScripts } from '@axistaylor/nextpress';
+import { WPHead, WPFooter } from '@axistaylor/nextpress';
 import { AssetUpdater } from '@/components/AssetUpdater';
 import { fetchAssets } from '@/actions/fetchAssets';
 import { headers } from 'next/headers';
 
 export default async function WordPressLayout({ children }) {
   const uri = (await headers()).get('x-uri') || '/';
-  // …fetch stylesheets, scripts, globalStyles for initial SSR…
+  // …fetch stylesheets, scripts, importMap, globalStyles for initial SSR…
 
   return (
     <html>
       <head>
-        <GlobalStyles globalStyles={globalStyles} pathname={uri} />
-        <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} pathname={uri} />
+        <WPHead
+          scripts={scripts}
+          stylesheets={stylesheets}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          pathname={uri}
+        />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
         {/* Wrapper is a client component; no pathname prop needed here. */}
         <AssetUpdater fetchAssets={fetchAssets} />
       </body>
@@ -116,8 +120,8 @@ type AssetData = {
 | Markers | Owner |
 |---------|-------|
 | `nextpress-stylesheets-start` / `nextpress-stylesheets-end` | `<Stylesheets>` |
-| `nextpress-head-scripts-start` / `nextpress-head-scripts-end` | `<HeadScripts>` |
-| `nextpress-body-scripts-start` / `nextpress-body-scripts-end` | `<BodyScripts>` |
+| `nextpress-head-scripts-start` / `nextpress-head-scripts-end` | `<WPHead>` |
+| `nextpress-body-scripts-start` / `nextpress-body-scripts-end` | `<WPFooter>` |
 
 On initial mount the effect is skipped (the server already rendered those assets). On every subsequent navigation the effect:
 
@@ -156,5 +160,5 @@ import type { AssetData } from '@axistaylor/nextpress/client';
 
 - [GlobalStyles](./global-styles.md) — Server-side global stylesheet rendering
 - [Stylesheets](./stylesheets.md) — Enqueued stylesheets with marker tags
-- [HeadScripts](./head-scripts.md) / [BodyScripts](./body-scripts.md) — Enqueued scripts with marker tags
+- [WPHead](./wp-head.md) / [WPFooter](./wp-footer.md) — Enqueued scripts with marker tags
 - [WordPress Plugin](../wordpress-plugin.md) — `globalStyles` query consumed by `fetchAssets`

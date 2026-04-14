@@ -7,7 +7,9 @@ import { createUrlRewritingParser } from '@/parsers/urlRewritingParser';
 export interface ContentProps {
   content: string;
   instance?: string;
+  /** @deprecated Use `parsers` instead. */
   parser?: CustomParser;
+  parsers?: CustomParser[];
   linksAs?: FC<JSX.IntrinsicElements['a']>;
   bypassExternalLinks?: boolean;
 }
@@ -29,7 +31,7 @@ function fixInvalidHtml(html: string): string {
   );
 }
 
-export function Content({ content, parser, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']>, bypassExternalLinks = false }: ContentProps) {
+export function Content({ content, parser, parsers, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']>, bypassExternalLinks = false }: ContentProps) {
   const fixedContent = fixInvalidHtml(content);
 
   // Check if formatPermalinks is enabled (defaults to true)
@@ -47,5 +49,13 @@ export function Content({ content, parser, instance = 'default', linksAs = 'a' a
     });
   }
 
-  return (<div data-rendered="">{parseHtml(fixedContent, urlRewritingParser, parser)}</div>);
+  // Combine all parsers: URL rewriting first, then user-provided parsers.
+  // Support both deprecated single `parser` and new `parsers` array.
+  const allParsers: (CustomParser | undefined)[] = [
+    urlRewritingParser,
+    ...(parsers || []),
+    parser, // deprecated single parser last for backwards compat
+  ];
+
+  return (<div data-rendered="">{parseHtml(fixedContent, ...allParsers)}</div>);
 }

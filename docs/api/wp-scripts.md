@@ -9,7 +9,7 @@ keywords: "NextPress, WPScripts, WordPress, scripts, modules, deferred, async, s
 
 The `WPScripts` component is the core server component that renders WordPress enqueued scripts for a given location (head or body). It handles classic scripts, deferred/async scripts, and ES modules.
 
-Most apps should use [`HeadScripts`](./head-scripts.md) and [`BodyScripts`](./body-scripts.md) instead of `WPScripts` directly — they are thin wrappers that combine `WPScripts` with other head/body concerns.
+Most apps should use [`WPHead`](./wp-head.md) and [`WPFooter`](./wp-footer.md) instead of `WPScripts` directly — they are thin wrappers that combine `WPScripts` with other head/body concerns.
 
 ## Props
 
@@ -45,6 +45,6 @@ WordPress asset URLs are automatically transformed:
 
 ## Related
 
-- [HeadScripts](./head-scripts.md) - Head wrapper (GlobalStyles + ImportMap + WPScripts)
-- [BodyScripts](./body-scripts.md) - Body wrapper
+- [WPHead](./wp-head.md) - Head wrapper (GlobalStyles + ImportMap + WPScripts)
+- [WPFooter](./wp-footer.md) - Body wrapper
 - [AssetUpdater](./asset-updater.md) - Client-side asset refresh

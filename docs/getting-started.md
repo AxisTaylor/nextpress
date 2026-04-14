@@ -259,11 +259,7 @@ Create a layout that loads scripts, styles, global styles, and the import map:
 
 ```tsx
 // app/(wordpress)/layout.tsx
-import {
-  HeadScripts,
-  BodyScripts,
-  Stylesheets,
-} from '@axistaylor/nextpress';
+import { WPHead, WPFooter } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 import { fetchAssets, fetchGlobalStyles } from '@/lib/wordpress';
 import { fetchAssetsAction } from '@/actions/fetchAssets';
@@ -287,9 +283,9 @@ export default async function WordPressLayout({
   return (
     <html lang="en">
       <head>
-        <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts
+        <WPHead
           scripts={scripts}
+          stylesheets={stylesheets}
           globalStyles={globalStyles}
           importMap={importMap}
           pathname={uri}
@@ -297,7 +293,7 @@ export default async function WordPressLayout({
       </head>
       <body>
         <main>{children}</main>
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
         <AssetUpdater fetchAssets={fetchAssetsAction} />
       </body>
     </html>
@@ -305,7 +301,7 @@ export default async function WordPressLayout({
 }
 ```
 
-> **Why use a layout?** Loading scripts and stylesheets in a layout component ensures they're loaded once for all pages in that route group, improving performance. See [HeadScripts documentation](./api/head-scripts.md) for more details.
+> **Why use a layout?** Loading scripts and stylesheets in a layout component ensures they're loaded once for all pages in that route group, improving performance. See [WPHead documentation](./api/wp-head.md) for more details.
 
 > **About `AssetUpdater`:** Next.js does not re-run the server layout on client-side navigation, so the server-rendered assets would go stale as the user clicks around. `AssetUpdater` is a small client component that re-fetches the stylesheets, scripts, global styles, and import map and swaps them in place on every navigation.
 
@@ -372,7 +368,7 @@ your-nextjs-app/
 ## Next Steps
 
 - [Content Component](./api/content.md) - Learn about custom parsers for modifying rendered content
-- [HeadScripts](./api/head-scripts.md) - Global styles, import maps, and script loading
+- [WPHead](./api/wp-head.md) - Global styles, import maps, and script loading
 - [WPScripts](./api/wp-scripts.md) - Script type handling (classic, deferred, async, module)
 - [ImportMap](./api/import-map.md) - ES module import map for the Interactivity API
 - [WordPress Plugin](./wordpress-plugin.md) - Configure the NextPress WordPress plugin

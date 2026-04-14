@@ -13,6 +13,7 @@ type WCROptions = {
   defaultInstance?: string;
   formatPermalinks?: boolean;
   salt?: string;
+  instancesReadableOnClient?: boolean;
 }
 
 type MultiWPConfig = Record<string, WPConfig>;
@@ -37,7 +38,13 @@ export function withWCR(
   wpConfig: WPConfig | MultiWPConfig,
   options: WCROptions
 ) {
-  const { frontendDomain, frontendProtocol, formatPermalinks = true, salt = 'nextpress-default-salt' } = options;
+  const {
+    frontendDomain,
+    frontendProtocol,
+    formatPermalinks = true,
+    salt = 'nextpress-default-salt',
+    instancesReadableOnClient = false,
+  } = options;
 
   // Handle single instance (legacy support - convert to multi-instance with 'default' slug)
   let instances: MultiWPConfig;
@@ -119,6 +126,7 @@ export function withWCR(
       wcr_salt: salt,
       // NOTE: NEXTPRESS_WP_INSTANCES is set on process.env above (server-side only)
       // It is intentionally NOT added here to prevent client-side exposure
+      NEXTPRESS_WP_INSTANCES: instancesReadableOnClient ? process.env.NEXTPRESS_WP_INSTANCES : undefined,
     },
     redirects: async () => {
       const wordpressContentRenderRedirects = generateRedirects();

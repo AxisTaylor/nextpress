@@ -49,11 +49,11 @@ export default async function WordPressLayout({ children }) {
     <html>
       <head>
         <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} pathname={uri} />
+        <WPHead scripts={scripts} pathname={uri} />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -134,6 +134,6 @@ import type { EnqueuedStylesheet } from '@axistaylor/nextpress';
 
 ## Related
 
-- [HeadScripts](./head-scripts.md) - Header script loading
-- [BodyScripts](./body-scripts.md) - Footer script loading
+- [WPHead](./wp-head.md) - Header script loading
+- [WPFooter](./wp-footer.md) - Footer script loading
 - [Getting Started](../getting-started.md) - Initial setup

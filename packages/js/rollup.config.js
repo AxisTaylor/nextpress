@@ -34,6 +34,8 @@ export default [
     external: [
       'next',
       'next/script',
+      'next/image',
+      'next/navigation',
       'react',
       'lodash',
     ],
@@ -53,6 +55,8 @@ export default [
     external: [
       'next',
       'next/script',
+      'next/image',
+      'next/navigation',
       'react',
       'lodash',
     ],
@@ -83,6 +87,8 @@ export default [
     external: [
       'next',
       'next/script',
+      'next/image',
+      'next/navigation',
       'react',
       'lodash',
     ],
@@ -102,6 +108,8 @@ export default [
     external: [
       'next',
       'next/script',
+      'next/image',
+      'next/navigation',
       'react',
       'lodash',
     ],

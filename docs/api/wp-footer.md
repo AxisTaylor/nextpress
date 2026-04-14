@@ -1,18 +1,20 @@
 <!--
-title: "BodyScripts Component"
+title: "WPFooter Component"
 description: "Render WordPress footer scripts as server components using next/script with afterInteractive strategy."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, BodyScripts, WordPress, scripts, next/script, afterInteractive, server component"
+keywords: "NextPress, WPFooter, WordPress, scripts, next/script, afterInteractive, server component"
 -->
 
-# BodyScripts
+# WPFooter
 
-The `BodyScripts` component is a thin wrapper around [`WPScripts`](./wp-scripts.md) that renders WordPress footer scripts. It filters for `FOOTER`-location scripts and delegates to `WPScripts` with `location="body"`.
+The `WPFooter` component is a thin wrapper around [`WPScripts`](./wp-scripts.md) that renders WordPress footer scripts. It filters for `FOOTER`-location scripts and delegates to `WPScripts` with `location="body"`.
+
+> **Deprecated alias:** `BodyScripts` is still exported as an alias for backwards compatibility, but new code should use `WPFooter`.
 
 ## Basic Usage
 
 ```tsx
-import { BodyScripts } from '@axistaylor/nextpress';
+import { WPFooter } from '@axistaylor/nextpress';
 
 export default async function WordPressLayout({ children }) {
   const { scripts } = await fetchAssets(uri);
@@ -22,7 +24,7 @@ export default async function WordPressLayout({ children }) {
       <head>{/* ... */}</head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -39,36 +41,42 @@ export default async function WordPressLayout({ children }) {
 
 ## How It Works
 
-BodyScripts filters for scripts with `location === 'FOOTER'` and renders each one as a `next/script` component with `strategy="afterInteractive"`. This means:
+WPFooter filters for scripts with `location === 'FOOTER'` and renders each one as a `next/script` component with `strategy="afterInteractive"`. This means:
 
 - Scripts load after page hydration
 - Page content renders first without blocking
 - Scripts execute in the order rendered (dependency ordering handled server-side by WordPress)
 
-Because `next/script` with `afterInteractive` is managed by Next.js regardless of component tree position, BodyScripts works correctly wherever it's placed.
+Because `next/script` with `afterInteractive` is managed by Next.js regardless of component tree position, WPFooter works correctly wherever it's placed.
 
 ## Retrieving URI in Layouts
 
-BodyScripts needs the current URI for WooCommerce URL transformations. See [HeadScripts - Retrieving URI in Layouts](./head-scripts.md#retrieving-uri-in-layouts) for the complete setup guide.
+WPFooter needs the current URI for WooCommerce URL transformations. See [WPHead - Retrieving URI in Layouts](./wp-head.md#retrieving-uri-in-layouts) for the complete setup guide.
 
 ```tsx
 // app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
+import { WPHead, WPFooter } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 
 export default async function WordPressLayout({ children }) {
   const uri = (await headers()).get('x-uri') || '/';
-  const { scripts, stylesheets } = await fetchAssets(uri);
+  const { scripts, stylesheets, importMap } = await fetchAssets(uri);
+  const globalStyles = await fetchGlobalStyles();
 
   return (
     <html>
       <head>
-        <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} pathname={uri} />
+        <WPHead
+          scripts={scripts}
+          stylesheets={stylesheets}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          pathname={uri}
+        />
       </head>
       <body>
         {children}
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
       </body>
     </html>
   );
@@ -77,7 +85,7 @@ export default async function WordPressLayout({ children }) {
 
 ## Script Rendering
 
-For each footer script, BodyScripts renders (in order):
+For each footer script, WPFooter renders (in order):
 
 1. **`extraData`** (id `{handle}-js-extra`) - Localized script data with proxy placeholder replacement
 2. **`before`** (id `{handle}-js-before`) - Inline script (with `wc-settings` URL transformation for WooCommerce)
@@ -90,11 +98,11 @@ All rendered with `strategy="afterInteractive"`.
 
 ## Marker Tags
 
-`BodyScripts` brackets its output with two zero-byte marker scripts: `id="nextpress-body-scripts-start"` and `id="nextpress-body-scripts-end"`. [AssetUpdater](./asset-updater.md) uses these as the clear-and-refill boundary on client-side navigation.
+`WPFooter` brackets its output with two zero-byte marker scripts: `id="nextpress-body-scripts-start"` and `id="nextpress-body-scripts-end"`. [AssetUpdater](./asset-updater.md) uses these as the clear-and-refill boundary on client-side navigation.
 
 ## WooCommerce Compatibility
 
-BodyScripts includes special handling for WooCommerce:
+WPFooter includes special handling for WooCommerce:
 
 - **`wc-settings` transformation**: The `before` script for `wc-settings` is transformed to replace WordPress backend URLs with frontend proxy URLs
 - **Proxy placeholder replacement**: `extraData` content has proxy placeholders resolved for the current instance and pathname
@@ -113,12 +121,12 @@ WordPress asset URLs are automatically transformed:
 When using multiple WordPress backends:
 
 ```tsx
-<BodyScripts scripts={scripts} instance="shop" pathname={uri} />
+<WPFooter scripts={scripts} instance="shop" pathname={uri} />
 ```
 
 ## Server Component
 
-BodyScripts is a React Server Component:
+WPFooter is a React Server Component:
 
 - No `'use client'` directive
 - Renders `next/script` tags on the server
@@ -128,12 +136,12 @@ BodyScripts is a React Server Component:
 ## TypeScript
 
 ```tsx
-import { BodyScripts } from '@axistaylor/nextpress';
+import { WPFooter } from '@axistaylor/nextpress';
 import type { EnqueuedScript } from '@axistaylor/nextpress';
 ```
 
 ## Related
 
-- [HeadScripts](./head-scripts.md) - Header script loading and URI retrieval
+- [WPHead](./wp-head.md) - Header script loading and URI retrieval
 - [Stylesheets](./stylesheets.md) - Stylesheet loading
 - [Getting Started](../getting-started.md) - Initial setup

@@ -8,7 +8,7 @@ import { fetchAssets } from '@/actions/fetchAssets';
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AssetUpdater } from "@/components/AssetUpdater";
-import { Stylesheets, HeadScripts, BodyScripts } from "@axistaylor/nextpress";
+import { WPHead, WPFooter } from "@axistaylor/nextpress";
 
 
 import "@/app/wordpress.css";
@@ -35,15 +35,20 @@ export default async function WordPressLayout({
   return (
     <html lang="en">
       <head>
-        <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} globalStyles={globalStyles} importMap={importMap} pathname={uri} />
+        <WPHead
+          scripts={scripts}
+          stylesheets={stylesheets}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          pathname={uri}
+        />
       </head>
       <body className={inter.className}>
         <Navbar />
         <main className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
           {children}
         </main>
-        <BodyScripts scripts={scripts} pathname={uri} />
+        <WPFooter scripts={scripts} pathname={uri} />
         <AssetUpdater fetchAssets={fetchAssets} />
         <Footer />
       </body>
