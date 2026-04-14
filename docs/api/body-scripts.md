@@ -7,7 +7,7 @@ keywords: "NextPress, BodyScripts, WordPress, scripts, next/script, afterInterac
 
 # BodyScripts
 
-The `BodyScripts` component renders WordPress footer scripts using `next/script` with the `afterInteractive` strategy. It is a server component that loads scripts after page hydration.
+The `BodyScripts` component is a thin wrapper around [`WPScripts`](./wp-scripts.md) that renders WordPress footer scripts. It filters for `FOOTER`-location scripts and delegates to `WPScripts` with `location="body"`.
 
 ## Basic Usage
 

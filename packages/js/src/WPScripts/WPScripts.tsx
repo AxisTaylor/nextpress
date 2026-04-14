@@ -2,9 +2,9 @@ import React, { Fragment } from 'react';
 import Script from 'next/script';
 import { EnqueuedScript, ScriptLoadingGroupEnum, ScriptLoadingStrategyEnum, ScriptTypeEnum } from '@/types';
 import { getNextPressConfigScript } from '@/compatibility/wordpress';
-import { getWPInstance } from '@/config/getWPInstance';
+import { getAllWPInstances, getWPInstance } from '@/config/getWPInstance';
 import { replaceProxyPlaceholders, transformWcSettings } from '@/compatibility/woocommerce';
-import { isExternalScript, transformAssetUrl } from '@/utils/url';
+import { isExternalScript, isScriptForAnotherInstance, transformAssetUrl } from '@/utils/url';
 import { joinScriptContent } from '@/utils/content';
 
 export interface WPScriptsProps {
@@ -39,6 +39,15 @@ export function WPScripts({ scripts, location, instance = 'default', pathname = 
   }
 
   const { wpHomeUrl } = getWPInstance(instance);
+  const allInstances = Object.entries(getAllWPInstances())
+    .reduce((acc, [slug, instance]) => {
+      if (instance.wpHomeUrl === wpHomeUrl) {
+        return acc;
+      }
+
+      acc[slug] = instance.wpHomeUrl;
+      return acc;
+    }, {} as Record<string, string>);
   const frontendUrl = process.env.wcr_frontend_url || '';
 
   return (
@@ -50,9 +59,13 @@ export function WPScripts({ scripts, location, instance = 'default', pathname = 
         // Transform src URL
         let src = '';
         if (script.src) {
+          const isExternal = isExternalScript(script.src, [wpHomeUrl, ...Object.values(allInstances)]);
+          const isForAnotherInstance = isScriptForAnotherInstance(script.src, allInstances);
           // Body scripts: detect external scripts and load directly
-          if (!isHead && isExternalScript(script.src, wpHomeUrl)) {
+          if (!isHead && isExternal) {
             src = script.src;
+          } else if (isForAnotherInstance) {
+            src = transformAssetUrl(script.src, isForAnotherInstance);
           } else {
             src = transformAssetUrl(script.src, instance);
           }

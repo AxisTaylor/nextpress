@@ -1,4 +1,4 @@
-import { extractPath, isInternalRoute, isExternalScript, transformAssetUrl } from './url';
+import { extractPath, isInternalRoute, isExternalScript, isScriptForAnotherInstance, transformAssetUrl } from './url';
 
 describe('extractPath', () => {
   it('should extract pathname from a full URL', () => {
@@ -34,15 +34,45 @@ describe('isInternalRoute', () => {
 
 describe('isExternalScript', () => {
   it('should return true for different origins', () => {
-    expect(isExternalScript('https://cdn.example.com/script.js', 'http://wordpress.local')).toBe(true);
+    expect(isExternalScript('https://cdn.example.com/script.js', ['http://wordpress.local'])).toBe(true);
   });
 
   it('should return false for same origin', () => {
-    expect(isExternalScript('http://wordpress.local/app/plugins/test.js', 'http://wordpress.local')).toBe(false);
+    expect(isExternalScript('http://wordpress.local/app/plugins/test.js', ['http://wordpress.local'])).toBe(false);
+  });
+
+  it('should return false when script matches any instance URL', () => {
+    expect(isExternalScript(
+      'http://other-site.local/app/plugins/test.js',
+      ['http://wordpress.local', 'http://other-site.local']
+    )).toBe(false);
   });
 
   it('should return false for invalid URLs', () => {
-    expect(isExternalScript('/relative/path.js', 'http://wordpress.local')).toBe(false);
+    expect(isExternalScript('/relative/path.js', ['http://wordpress.local'])).toBe(false);
+  });
+});
+
+describe('isScriptForAnotherInstance', () => {
+  it('should return the instance slug when script matches', () => {
+    expect(isScriptForAnotherInstance(
+      'http://other-site.local/app/plugins/test.js',
+      { shop: 'http://other-site.local' }
+    )).toBe('shop');
+  });
+
+  it('should return false when no instance matches', () => {
+    expect(isScriptForAnotherInstance(
+      'https://cdn.example.com/script.js',
+      { shop: 'http://other-site.local' }
+    )).toBe(false);
+  });
+
+  it('should return false for relative paths', () => {
+    expect(isScriptForAnotherInstance(
+      '/relative/path.js',
+      { shop: 'http://other-site.local' }
+    )).toBe(false);
   });
 });
 
