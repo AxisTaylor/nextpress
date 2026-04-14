@@ -1,5 +1,16 @@
 # @axistaylor/nextpress
 
+## 1.3.2
+
+### Patch Changes
+
+- [#22](https://github.com/AxisTaylor/nextpress/pull/22) [`b442ee2`](https://github.com/AxisTaylor/nextpress/commit/b442ee220c8c8228d11194c6c166faa6449da23c) Thanks [@kidunot89](https://github.com/kidunot89)! - Fire synthetic DOMContentLoaded/load events on initial mount so WordPress scripts initialize on first page load.
+
+  - New `usePageEvents` hook and `firePageEvents` utility that dispatch synthetic `DOMContentLoaded`, `load`, and `nextpress:page-change` events
+  - New `<PageEvents>` client component for apps not using AssetUpdater
+  - `AssetUpdater` fires page events on initial mount (before skipping asset refresh) so WP scripts that listen for `DOMContentLoaded` can initialize — previously they only fired on client-side navigation
+  - Export `PageEvents`, `usePageEvents`, and `firePageEvents` from `@axistaylor/nextpress/client`
+
 ## 1.3.1
 
 ### Patch Changes
