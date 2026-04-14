@@ -19,11 +19,24 @@ export const isInternalRoute = /^\/wp-(?:includes|admin)\//;
  * Determines if a script URL is external (different origin) or a WordPress asset.
  * External scripts should be loaded directly, WordPress assets should be proxied.
  */
-export function isExternalScript(scriptUrl: string, wpHomeUrl: string): boolean {
+export function isExternalScript(scriptUrl: string, instanceHomeUrls: string[]): boolean {
   try {
     const scriptOrigin = new URL(scriptUrl).origin;
-    const backendOrigin = new URL(wpHomeUrl).origin;
-    return scriptOrigin !== backendOrigin;
+    return !instanceHomeUrls.some(url => new URL(url).origin === scriptOrigin);
+  } catch {
+    return false;
+  }
+}
+
+export function isScriptForAnotherInstance(scriptUrl: string, instances: Record<string, string>): string | false {
+  try {
+    const scriptOrigin = new URL(scriptUrl).origin;
+    for (const [slug, url] of Object.entries(instances)) {
+      if (new URL(url).origin === scriptOrigin) {
+        return slug;
+      }
+    }
+    return false;
   } catch {
     return false;
   }

@@ -1,92 +1,35 @@
 <!--
 title: "HeadScripts Component"
-description: "Render WordPress header scripts as server components using next/script with beforeInteractive strategy."
+description: "Render WordPress header scripts, global styles, and import maps as server components."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, HeadScripts, WordPress, scripts, next/script, beforeInteractive, server component"
+keywords: "NextPress, HeadScripts, WordPress, scripts, modules, import map, global styles, server component"
 -->
 
 # HeadScripts
 
-The `HeadScripts` component renders WordPress header scripts using `next/script` with the `beforeInteractive` strategy. It is a server component that renders scripts in document order before any Next.js code runs.
+The `HeadScripts` component is a server component wrapper that renders WordPress head assets: global styles, the script module import map, and header scripts.
+
+It combines [`GlobalStyles`](./global-styles.md), [`ImportMap`](#import-map), and [`WPScripts`](#wpscripts) into a single component for the `<head>`.
 
 ## Basic Usage
 
 ```tsx
-import { HeadScripts } from '@axistaylor/nextpress';
+import { HeadScripts, Stylesheets, BodyScripts } from '@axistaylor/nextpress';
 
 export default async function WordPressLayout({ children }) {
-  const { scripts } = await fetchAssets(uri);
-
-  return (
-    <html>
-      <head>
-        <HeadScripts scripts={scripts} pathname={uri} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
-}
-```
-
-## Props
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `scripts` | `EnqueuedScript[]` | Yes | Array of WordPress scripts to render |
-| `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
-| `pathname` | `string` | No | Current page pathname |
-
-## How It Works
-
-HeadScripts filters for scripts with `location === 'HEADER'` and renders each one as a `next/script` component with `strategy="beforeInteractive"`. This means:
-
-- Scripts are injected into the initial HTML `<head>`
-- They execute before any Next.js JavaScript runs
-- They load in the order rendered (dependency ordering is handled server-side by WordPress)
-
-Because `next/script` with `beforeInteractive` hoists to `<head>` automatically, HeadScripts works correctly regardless of where it's placed in the component tree.
-
-## Retrieving URI in Layouts
-
-To fetch the correct scripts for each page, you need the current URI in your layout. This is done through the proxy/middleware setting a custom header.
-
-### Step 1: Configure Proxy to Set URI Header
-
-In your `proxy.ts` (Next.js 16+) or `middleware.ts`, set the `x-uri` header:
-
-```ts
-import { NextResponse, NextRequest } from 'next/server';
-import { proxyByWCR, isProxiedRoute } from '@axistaylor/nextpress/proxyByWCR';
-
-export const proxy = async (request: NextRequest) => {
-  const pathname = request.nextUrl.pathname;
-
-  if (isProxiedRoute(pathname)) {
-    return proxyByWCR(request);
-  }
-
-  const headers = new Headers(request.headers);
-  headers.set('x-uri', pathname);
-  return NextResponse.next({ request: { headers } });
-};
-```
-
-### Step 2: Read URI Header in Layout
-
-```tsx
-// app/(wordpress)/layout.tsx
-import { HeadScripts, BodyScripts, Stylesheets } from '@axistaylor/nextpress';
-import { headers } from 'next/headers';
-
-export default async function WordPressLayout({ children }) {
-  const uri = (await headers()).get('x-uri') || '/';
-  const { scripts, stylesheets } = await fetchAssets(uri);
+  const { scripts, stylesheets, importMap } = await fetchAssets(uri);
+  const globalStyles = await fetchGlobalStyles();
 
   return (
     <html>
       <head>
         <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} pathname={uri} />
+        <HeadScripts
+          scripts={scripts}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          pathname={uri}
+        />
       </head>
       <body>
         {children}
@@ -97,58 +40,70 @@ export default async function WordPressLayout({ children }) {
 }
 ```
 
-## Script Rendering
+## Props
 
-For each header script, HeadScripts renders (in order):
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `scripts` | `EnqueuedScript[]` | Yes | Array of WordPress scripts to render |
+| `globalStyles` | `GlobalStylesType \| null` | No | WordPress global styles (theme.json stylesheet, custom CSS, font faces) |
+| `importMap` | `WPImport[]` | No | Import map entries for script modules (`@wordpress/interactivity`, etc.) |
+| `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
+| `pathname` | `string` | No | Current page pathname |
 
-1. **`extraData`** (id `{handle}-js-extra`) - Localized script data (from `wp_localize_script`)
-2. **`before`** (id `{handle}-js-before`) - Inline script before the main script
-3. **NextPress config** - Automatically injected after `wp-api-fetch` for proxy URL configuration
-4. **Main script** (id `{handle}`) - The script `src` proxied through Next.js
-5. **`after`** (id `{handle}-js-after`) - Inline script after the main script
+## What It Renders
 
-The `-js-extra` / `-js-before` / `-js-after` suffixes match WordPress's own `wp_enqueue_script` naming convention, so client-side consumers (like [AssetUpdater](./asset-updater.md)) can reliably target individual inline fragments — e.g. to run `processWcSettings()` after the `wc-settings-js-extra` block has executed.
+HeadScripts renders three sub-components in order:
 
-All rendered with `strategy="beforeInteractive"`.
+1. **`<GlobalStyles>`** — Scoped theme.json stylesheet, font faces, and custom CSS
+2. **`<ImportMap>`** — `<script type="importmap">` for ES module bare specifier resolution
+3. **`<WPScripts location="head">`** — Header scripts (classic, deferred, async, and module)
+
+## Script Types
+
+HeadScripts (via WPScripts) handles four types of scripts:
+
+| Type | Rendering | Strategy |
+|------|-----------|----------|
+| **Classic** | `next/script` | `beforeInteractive` |
+| **Deferred** (`strategy: DEFER`) | `next/script` | `afterInteractive` (executes after DOM) |
+| **Async** (`strategy: ASYNC`) | `next/script` | `beforeInteractive` |
+| **Module** (`type: MODULE`) | Plain `<script type="module">` | N/A (modules are deferred by spec) |
+
+## Import Map
+
+When `importMap` is provided, HeadScripts renders a `<script type="importmap">` before any scripts. This allows ES modules (like `@wordpress/interactivity` view scripts) to resolve bare specifiers:
+
+```json
+{
+  "imports": {
+    "@wordpress/interactivity": "/atx/default/wp-internal-assets/wp-includes/js/dist/script-modules/interactivity/debug.js"
+  }
+}
+```
+
+The import map entries come from the `assetsByUri` GraphQL query's `importMap(scheme: RELATIVE)` field.
+
+## Multisite / Multi-Instance Support
+
+On WordPress multisite, plugin assets may be served from a different domain than the content site (e.g. `axistaylor.local` vs `woographql.local`). WPScripts automatically detects this via `isScriptForAnotherInstance()` and routes the script through the correct instance's proxy:
+
+```tsx
+<HeadScripts scripts={scripts} instance="demo" pathname={uri} />
+```
+
+## Inline Script Processing
+
+All inline script content (`extraData`, `before`, `after`) is processed through `replaceProxyPlaceholders()` to rewrite `__NEXTPRESS_PROXY__` and `__NEXTPRESS_ASSETS__` placeholders. The `wc-settings` inline script additionally goes through `transformWcSettings()`.
 
 ## Marker Tags
 
-`HeadScripts` brackets its output with two zero-byte marker scripts: `id="nextpress-head-scripts-start"` and `id="nextpress-head-scripts-end"`. [AssetUpdater](./asset-updater.md) uses these as the clear-and-refill boundary on client-side navigation.
-
-## URL Proxying
-
-WordPress asset URLs are automatically transformed:
-
-- Content assets (`/wp-content/...`) become `/atx/{instance}/wp-assets/...`
-- Internal assets (`/wp-includes/...`, `/wp-admin/...`) become `/atx/{instance}/wp-internal-assets/...`
-
-## Multi-WordPress Support
-
-When using multiple WordPress backends:
-
-```tsx
-<HeadScripts scripts={scripts} instance="blog" pathname={uri} />
-```
-
-## Server Component
-
-HeadScripts is a React Server Component:
-
-- No `'use client'` directive
-- Renders `next/script` tags on the server
-- Dependency ordering handled server-side by WordPress `assetsByUri` GraphQL query
-- No client-side script tracking or deduplication needed
-
-## TypeScript
-
-```tsx
-import { HeadScripts } from '@axistaylor/nextpress';
-import type { EnqueuedScript } from '@axistaylor/nextpress';
-```
+WPScripts brackets its output with marker scripts (`nextpress-head-scripts-start` / `nextpress-head-scripts-end`) used by [AssetUpdater](./asset-updater.md) for client-side navigation.
 
 ## Related
 
+- [WPScripts](./wp-scripts.md) - Core script rendering component
 - [BodyScripts](./body-scripts.md) - Footer script loading
+- [GlobalStyles](./global-styles.md) - WordPress global styles
+- [ImportMap](./import-map.md) - Script module import map
 - [Stylesheets](./stylesheets.md) - Stylesheet loading
-- [proxyByWCR](./proxy-by-wcr.md) - Proxy configuration
-- [Getting Started](../getting-started.md) - Initial setup
+- [AssetUpdater](./asset-updater.md) - Client-side asset refresh

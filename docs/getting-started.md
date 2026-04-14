@@ -112,12 +112,8 @@ export async function fetchPage(uri: string) {
       query: `
         query GetPage($uri: String!) {
           nodeByUri(uri: $uri) {
-            ... on Page {
-              content
-            }
-            ... on Post {
-              content
-            }
+            ... on Page { content }
+            ... on Post { content }
           }
         }
       `,
@@ -127,9 +123,7 @@ export async function fetchPage(uri: string) {
   });
 
   const { data } = await response.json();
-  return {
-    content: data?.nodeByUri?.content || '',
-  };
+  return { content: data?.nodeByUri?.content || '' };
 }
 
 export async function fetchAssets(uri: string) {
@@ -139,25 +133,35 @@ export async function fetchAssets(uri: string) {
     body: JSON.stringify({
       query: `
         query GetAssets($uri: String!) {
-          uriAssets(uri: $uri) {
-            scripts {
-              handle
-              src
-              version
-              strategy
-              location
-              dependencies
-              before
-              after
-              extraData
+          assetsByUri(uri: $uri) {
+            importMap(scheme: RELATIVE) {
+              name
+              path
             }
-            stylesheets {
-              handle
-              src
-              version
-              media
-              before
-              after
+            enqueuedStylesheets(first: 500) {
+              nodes {
+                handle
+                src
+                version
+                before
+                after
+                dependencies { handle }
+              }
+            }
+            enqueuedScripts(first: 500) {
+              nodes {
+                handle
+                src
+                strategy
+                version
+                group
+                location
+                type
+                before
+                after
+                extraData
+                dependencies { handle }
+              }
             }
           }
         }
@@ -168,9 +172,11 @@ export async function fetchAssets(uri: string) {
   });
 
   const { data } = await response.json();
+  const assets = data?.assetsByUri;
   return {
-    scripts: data?.uriAssets?.scripts || [],
-    stylesheets: data?.uriAssets?.stylesheets || [],
+    scripts: assets?.enqueuedScripts?.nodes || [],
+    stylesheets: assets?.enqueuedStylesheets?.nodes || [],
+    importMap: assets?.importMap || [],
   };
 }
 
@@ -197,22 +203,71 @@ export async function fetchGlobalStyles() {
 }
 ```
 
-### 4. Create WordPress Layout
+### 4. Create Asset Fetcher Server Action
 
-Create a layout that loads scripts and styles based on the current URI:
+Create a server action that the `AssetUpdater` client component can call on client-side navigation to refresh assets:
+
+```ts
+// actions/fetchAssets.ts
+'use server';
+
+import { fetchAssets, fetchGlobalStyles } from '@/lib/wordpress';
+import type { AssetData } from '@axistaylor/nextpress/client';
+
+export async function fetchAssetsAction(uri: string): Promise<AssetData> {
+  const [{ stylesheets, scripts, importMap }, globalStyles] = await Promise.all([
+    fetchAssets(uri),
+    fetchGlobalStyles(),
+  ]);
+
+  return { stylesheets, scripts, globalStyles, importMap };
+}
+```
+
+### 5. Create AssetUpdater Client Wrapper
+
+The `AssetUpdater` needs the current pathname from `next/navigation`. Create a thin client wrapper:
+
+```tsx
+// components/AssetUpdater.tsx
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { AssetUpdater as NextPressAssetUpdater } from '@axistaylor/nextpress/client';
+import type { AssetData } from '@axistaylor/nextpress/client';
+
+interface AssetUpdaterProps {
+  fetchAssets: (uri: string) => Promise<AssetData>;
+  instance?: string;
+}
+
+export function AssetUpdater({ fetchAssets, instance }: AssetUpdaterProps) {
+  const pathname = usePathname();
+  return (
+    <NextPressAssetUpdater
+      pathname={pathname}
+      instance={instance}
+      fetchAssets={fetchAssets}
+    />
+  );
+}
+```
+
+### 6. Create WordPress Layout
+
+Create a layout that loads scripts, styles, global styles, and the import map:
 
 ```tsx
 // app/(wordpress)/layout.tsx
 import {
-  GlobalStyles,
   HeadScripts,
   BodyScripts,
   Stylesheets,
 } from '@axistaylor/nextpress';
 import { headers } from 'next/headers';
 import { fetchAssets, fetchGlobalStyles } from '@/lib/wordpress';
-import { AssetUpdater } from '@/components/AssetUpdater';
 import { fetchAssetsAction } from '@/actions/fetchAssets';
+import { AssetUpdater } from '@/components/AssetUpdater';
 
 export default async function WordPressLayout({
   children,
@@ -224,7 +279,7 @@ export default async function WordPressLayout({
   const uri = headersList.get('x-uri') || '/';
 
   // Fetch WordPress assets and global styles for this URI
-  const [{ scripts, stylesheets }, globalStyles] = await Promise.all([
+  const [{ scripts, stylesheets, importMap }, globalStyles] = await Promise.all([
     fetchAssets(uri),
     fetchGlobalStyles(),
   ]);
@@ -232,14 +287,17 @@ export default async function WordPressLayout({
   return (
     <html lang="en">
       <head>
-        <GlobalStyles globalStyles={globalStyles} pathname={uri} />
         <Stylesheets stylesheets={stylesheets} pathname={uri} />
-        <HeadScripts scripts={scripts} pathname={uri} />
+        <HeadScripts
+          scripts={scripts}
+          globalStyles={globalStyles}
+          importMap={importMap}
+          pathname={uri}
+        />
       </head>
       <body>
         <main>{children}</main>
         <BodyScripts scripts={scripts} pathname={uri} />
-        {/* Client wrapper that keeps assets in sync on client-side navigation */}
         <AssetUpdater fetchAssets={fetchAssetsAction} />
       </body>
     </html>
@@ -247,13 +305,13 @@ export default async function WordPressLayout({
 }
 ```
 
-> **Why use a layout?** Loading scripts and stylesheets in a layout component ensures they're loaded once for all pages in that route group, improving performance. See [HeadScripts documentation](./head-scripts.md#retrieving-uri-in-layouts) for more details.
+> **Why use a layout?** Loading scripts and stylesheets in a layout component ensures they're loaded once for all pages in that route group, improving performance. See [HeadScripts documentation](./api/head-scripts.md) for more details.
 
-> **About `AssetUpdater`:** Next.js does not re-run the server layout on client-side navigation, so the server-rendered assets would go stale as the user clicks around. `AssetUpdater` is a small client component that re-fetches the stylesheets, scripts, and global styles and swaps them in place on every navigation. It must be wrapped in a client component that reads `usePathname()` from `next/navigation` — see [AssetUpdater → Basic Usage](./api/asset-updater.md#basic-usage) for the wrapper and companion server action.
+> **About `AssetUpdater`:** Next.js does not re-run the server layout on client-side navigation, so the server-rendered assets would go stale as the user clicks around. `AssetUpdater` is a small client component that re-fetches the stylesheets, scripts, global styles, and import map and swaps them in place on every navigation.
 
 > **Tailwind users:** If your project uses Tailwind's default Preflight layer on the same routes, it can override WordPress's scoped theme styles (most visibly on WooCommerce cart/checkout buttons). See [Troubleshooting → Tailwind Preflight Overriding WordPress Styles](./troubleshooting.md#tailwind-preflight-overriding-wordpress-styles) for the recommended workarounds.
 
-### 5. Create Page Component
+### 7. Create Page Component
 
 Create a page component that renders WordPress content:
 
@@ -281,7 +339,7 @@ export default async function Page({ params }: PageProps) {
 }
 ```
 
-### 6. Configure Environment Variables
+### 8. Configure Environment Variables
 
 Create a `.env.local` file:
 
@@ -297,9 +355,13 @@ After setup, your project structure should look like:
 your-nextjs-app/
 ├── app/
 │   └── (wordpress)/           # Route group for WordPress pages
-│       ├── layout.tsx         # Loads scripts & styles
+│       ├── layout.tsx         # Loads scripts, styles, global styles, import map
 │       └── [[...uri]]/
 │           └── page.tsx       # Renders content
+├── actions/
+│   └── fetchAssets.ts         # Server action for AssetUpdater
+├── components/
+│   └── AssetUpdater.tsx       # Client wrapper for pathname
 ├── lib/
 │   └── wordpress.ts           # GraphQL utilities
 ├── proxy.ts                   # WordPress API proxy + URI header
@@ -309,8 +371,9 @@ your-nextjs-app/
 
 ## Next Steps
 
-- [Content Component](./content.md) - Learn about custom parsers for modifying rendered content
-- [HeadScripts](./head-scripts.md) - Understand script loading and URI retrieval
+- [Content Component](./api/content.md) - Learn about custom parsers for modifying rendered content
+- [HeadScripts](./api/head-scripts.md) - Global styles, import maps, and script loading
+- [WPScripts](./api/wp-scripts.md) - Script type handling (classic, deferred, async, module)
+- [ImportMap](./api/import-map.md) - ES module import map for the Interactivity API
 - [WordPress Plugin](./wordpress-plugin.md) - Configure the NextPress WordPress plugin
-- [Multi-WordPress](./multi-wordpress.md) - Connect to multiple WordPress backends
 - [Troubleshooting](./troubleshooting.md) - Common issues and solutions
