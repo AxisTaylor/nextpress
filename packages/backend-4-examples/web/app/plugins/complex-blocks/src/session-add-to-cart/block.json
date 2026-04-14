@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "complex-blocks/session-add-to-cart",
+  "version": "1.0.0",
+  "title": "Session Add to Cart",
+  "category": "woocommerce",
+  "description": "A block that adds a product to the WooCommerce cart via AJAX, testing inline script data and session persistence.",
+  "supports": {
+    "html": false
+  },
+  "attributes": {
+    "productId": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "textdomain": "complex-blocks",
+  "render": "file:./render.php",
+  "viewScript": ["file:./view.js", "wp-api-fetch"]
+}

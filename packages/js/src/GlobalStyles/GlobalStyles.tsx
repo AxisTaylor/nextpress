@@ -41,6 +41,7 @@ export function GlobalStyles({
       {fontFaceCss && (
         <style
           id="nextpress-font-faces"
+          className="wp-fonts-local"
           data-nextpress="global"
           dangerouslySetInnerHTML={{ __html: fontFaceCss }}
         />

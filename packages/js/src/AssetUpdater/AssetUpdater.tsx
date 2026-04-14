@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum } from '@/types';
+import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
+import { WPImport } from '@/ImportMap';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
+import { transformAssetUrl } from '@/utils/url';
+import { joinScriptContent } from '@/utils/content';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
 
 export interface AssetData {
   stylesheets: EnqueuedStylesheet[];
   scripts: EnqueuedScript[];
   globalStyles?: GlobalStylesType | null;
+  importMap?: WPImport[] | null;
 }
 
 export interface AssetUpdaterProps {
@@ -25,39 +29,6 @@ export interface AssetUpdaterProps {
    * require server-side credentials.
    */
   fetchAssets: (uri: string) => Promise<AssetData>;
-}
-
-const isInternalRoute = /^\/wp-(?:includes|admin)\//;
-
-/**
- * Extracts the path from a URL, removing the protocol and domain.
- */
-function extractPath(url: string): string {
-  try {
-    return new URL(url).pathname;
-  } catch {
-    return url;
-  }
-}
-
-/**
- * Transforms a WordPress asset URL to route through the NextPress proxy.
- */
-function transformAssetUrl(src: string, instance: string): string {
-  const path = extractPath(src);
-  const prefix = isInternalRoute.test(path) ? 'wp-internal-assets' : 'wp-assets';
-  return `/atx/${instance}/${prefix}${path}`;
-}
-
-/**
- * Joins inline script/style content that may be a string or array.
- */
-function joinContent(
-  content: (string | null | undefined)[] | string | null | undefined,
-): string {
-  if (!content) return '';
-  if (Array.isArray(content)) return content.join('');
-  return content;
 }
 
 /**
@@ -119,16 +90,22 @@ function createLinkElement(id: string, href: string): HTMLLinkElement {
  */
 function createScriptElement(
   id: string,
-  options: { src?: string; content?: string },
+  options: { src?: string; content?: string; isModule?: boolean },
 ): { el: HTMLScriptElement; loaded: Promise<void> } {
   const el = document.createElement('script');
   el.id = id;
 
+  if (options.isModule) {
+    el.type = 'module';
+  }
+
   let loaded: Promise<void>;
 
   if (options.src) {
-    // Disable async to preserve execution order across multiple script handles.
-    el.async = false;
+    if (!options.isModule) {
+      // Disable async to preserve execution order across multiple script handles.
+      el.async = false;
+    }
     loaded = new Promise<void>((resolve) => {
       el.addEventListener('load', () => resolve(), { once: true });
       el.addEventListener('error', () => resolve(), { once: true });
@@ -164,7 +141,7 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string):
       parent.insertBefore(
         createStyleElement(
           `${handle}-before`,
-          scopeInlineStyles(joinContent(stylesheet.before)),
+          scopeInlineStyles(joinScriptContent(stylesheet.before)),
         ),
         endMarker,
       );
@@ -181,7 +158,7 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string):
       parent.insertBefore(
         createStyleElement(
           `${handle}-inline-css`,
-          scopeInlineStyles(joinContent(stylesheet.after)),
+          scopeInlineStyles(joinScriptContent(stylesheet.after)),
         ),
         endMarker,
       );
@@ -212,7 +189,7 @@ async function updateScripts(
   // defined by previous external scripts.
   const insert = async (
     id: string,
-    options: { src?: string; content?: string },
+    options: { src?: string; content?: string; isModule?: boolean },
   ): Promise<void> => {
     const { el, loaded } = createScriptElement(id, options);
     parent.insertBefore(el, endMarker);
@@ -252,6 +229,16 @@ async function updateScripts(
     const handle = script.handle || script.id;
     if (!handle) continue;
 
+    const isModule = String(script.type) === ScriptTypeEnum.MODULE;
+
+    // ES modules don't have inline extra/before/after scripts — just load the src.
+    if (isModule) {
+      if (script.src) {
+        await insert(handle, { src: transformAssetUrl(script.src, instance), isModule: true });
+      }
+      continue;
+    }
+
     const extraData = script.extraData
       ? replaceProxyPlaceholders(script.extraData, instance, pathname)
       : null;
@@ -260,7 +247,7 @@ async function updateScripts(
       await insertInlineAndAwait(`${handle}-js-extra`, extraData);
     }
 
-    const beforeScript = joinContent(script.before);
+    const beforeScript = joinScriptContent(script.before);
     if (beforeScript) {
       await insertInlineAndAwait(
         `${handle}-js-before`,
@@ -278,7 +265,7 @@ async function updateScripts(
       await insert(handle, { src: transformAssetUrl(script.src, instance) });
     }
 
-    const afterScript = joinContent(script.after);
+    const afterScript = joinScriptContent(script.after);
     if (afterScript) {
       await insertInlineAndAwait(`${handle}-js-after`, afterScript);
     }
@@ -336,6 +323,36 @@ function updateGlobalStyles(
 }
 
 /**
+ * Replaces the import map script tag with updated entries. Import maps
+ * cannot be modified once inserted, so the existing one is removed and
+ * a new one is created.
+ */
+function updateImportMap(
+  imports: WPImport[] | null | undefined,
+  instance: string,
+  pathname: string,
+): void {
+  const existing = document.getElementById('wp-importmap');
+  if (existing) {
+    existing.parentElement?.removeChild(existing);
+  }
+
+  if (!imports || imports.length === 0) return;
+
+  const map: Record<string, string> = {};
+  for (const entry of imports) {
+    // Paths use the RELATIVE scheme — route through the asset proxy.
+    map[entry.name] = transformAssetUrl(entry.path, instance);
+  }
+
+  const el = document.createElement('script');
+  el.type = 'importmap';
+  el.id = 'wp-importmap';
+  el.textContent = JSON.stringify({ imports: map });
+  document.head.appendChild(el);
+}
+
+/**
  * Fires the standard page lifecycle events so WordPress-enqueued scripts
  * that listen for them can re-initialize after a client-side navigation.
  */
@@ -379,6 +396,7 @@ export function AssetUpdater({
 
         updateStylesheets(assets.stylesheets, instance);
         updateGlobalStyles(assets.globalStyles, instance, pathname);
+        updateImportMap(assets.importMap, instance, pathname);
 
         // Insert head scripts sequentially, then body scripts sequentially,
         // so each script (inline or external) finishes executing before the

@@ -63,3 +63,5 @@ export function createUrlRewritingParser({
     return undefined;
   };
 }
+
+export { ElementProps, CustomParser };

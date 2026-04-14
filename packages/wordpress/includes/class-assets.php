@@ -42,7 +42,10 @@ class Assets {
 		add_filter( 'woocommerce_ajax_get_endpoint', array( $this, 'transform_wc_ajax_endpoint' ), 10, 2 );
 
 		// Transform WooCommerce return URL (order-received page) for headless
-		add_filter( 'woocommerce_get_return_url', array( $this, 'transform_return_url' ), 10, 2 );
+		add_filter( 'woocommerce_get_return_url', array( $this, 'transform_return_url' ), 10 );
+
+		// Ensure the cart URL is transformed for headless environments
+		add_filter( 'woocommerce_get_cart_url', array( $this, 'transform_cart_url' ), 10 );
 
 		// Allow WC block scripts to enqueue during asset simulation
 		add_action( 'nextpress_pre_simulate_render', array( $this, 'disable_wc_rest_api_filter_for_simulation' ) );
@@ -179,6 +182,8 @@ class Assets {
 		add_filter( 'plugins_url', array( $this, 'transform_plugins_url_to_proxy' ), 10, 3 );
 		add_filter( 'site_url', array( $this, 'transform_site_url_to_proxy' ), 10, 4 );
 		add_filter( 'wp_get_attachment_url', array( $this, 'transform_attachment_url_to_proxy' ), 10, 2 );
+		add_filter( 'woocommerce_get_cart_url', array( $this, 'transform_home_url_to_proxy' ), 10, 2 );
+
 	}
 
 	/**
@@ -437,10 +442,9 @@ class Assets {
 	 * redirects relative to the current origin (the Next.js frontend).
 	 *
 	 * @param string   $return_url The return URL.
-	 * @param WC_Order $order      The order object (unused).
 	 * @return string Relative path for the return URL.
 	 */
-	public function transform_return_url( $return_url, $order ) {
+	public function transform_return_url( $return_url ) {
 		// Check if feature is enabled via settings
 		$settings   = get_option( 'nextpress_headless_settings', array() );
 		$is_enabled = isset( $settings['enable_stripe_url_transforms'] )
@@ -472,6 +476,44 @@ class Assets {
 
 		// Return relative path (browser will use current origin)
 		return $path . $query;
+	}
+
+	/**
+	 * Transform woocommerce_get_cart_url to use proxy placeholder.
+	 *
+	 * Replaces the absolute WordPress cart URL with a __NEXTPRESS_PROXY__
+	 * placeholder so the headless frontend can resolve it relative to
+	 * its own origin.
+	 *
+	 * @param string $url The cart URL.
+	 * @return string The transformed URL with proxy placeholder.
+	 */
+	public function transform_cart_url( $url ) {
+		$settings   = get_option( 'nextpress_headless_settings', array() );
+		$is_enabled = isset( $settings['enable_stripe_url_transforms'] )
+			&& $settings['enable_stripe_url_transforms'] === 'on';
+
+		if ( ! $is_enabled ) {
+			return $url;
+		}
+
+		$home_url    = get_option( 'home' );
+		$home_parsed = wp_parse_url( $home_url );
+		$url_parsed  = wp_parse_url( $url );
+
+		if ( ! isset( $url_parsed['host'] ) || ! isset( $home_parsed['host'] ) ) {
+			return $url;
+		}
+
+		if ( $url_parsed['host'] !== $home_parsed['host'] ) {
+			return $url;
+		}
+
+		$scheme = isset( $url_parsed['scheme'] ) ? $url_parsed['scheme'] : 'http';
+		$path   = isset( $url_parsed['path'] ) ? $url_parsed['path'] : '/';
+		$query  = isset( $url_parsed['query'] ) ? '?' . $url_parsed['query'] : '';
+
+		return $scheme . '://__NEXTPRESS_PROXY__' . $path . $query;
 	}
 
 	public function disable_wc_rest_api_filter_for_simulation() {

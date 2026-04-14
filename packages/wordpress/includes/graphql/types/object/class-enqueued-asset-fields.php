@@ -17,6 +17,7 @@ class Enqueued_Asset_Fields {
 	 * @return void
 	 */
 	public static function register(): void {
+		deregister_graphql_field( 'EnqueuedAsset', 'group' );
 		register_graphql_field(
 			'EnqueuedAsset',
 			'group',
@@ -44,6 +45,22 @@ class Enqueued_Asset_Fields {
 				},
 				'resolve'     => static function ( \_WP_Dependency $script ) {
 					return Uri_Assets::get_script_location( $script );
+				},
+			]
+		);
+
+		register_graphql_field(
+			'EnqueuedScript',
+			'type',
+			[
+				'type'        => 'ScriptTypeEnum',
+				'description' => static function () {
+					return __( 'Whether this is a classic script or an ES module (WP Script Modules API).', 'nextpress' );
+				},
+				'resolve'     => static function ( \_WP_Dependency $script ) {
+					return isset( $script->extra['type'] ) && 'module' === $script->extra['type']
+						? 'module'
+						: 'classic';
 				},
 			]
 		);

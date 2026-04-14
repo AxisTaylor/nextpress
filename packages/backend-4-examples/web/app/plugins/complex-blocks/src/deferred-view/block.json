@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "complex-blocks/deferred-view",
+  "version": "1.0.0",
+  "title": "Deferred View Script",
+  "category": "widgets",
+  "description": "A block with a classic deferred viewScript that adds a data attribute after DOM is ready.",
+  "supports": {
+    "html": false
+  },
+  "textdomain": "complex-blocks",
+  "render": "file:./render.php",
+  "viewScript": "file:./view.js"
+}

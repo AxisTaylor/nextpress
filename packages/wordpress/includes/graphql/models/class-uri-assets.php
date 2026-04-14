@@ -12,6 +12,8 @@ use GraphQLRelay\Relay;
 use WPGraphQL\Model\Model;
 use GraphQL\Error\UserError;
 use NextPress\Uri_Assets\GraphQL\Utils\WP_Assets;
+use NextPress\Uri_Assets\GraphQL\Utils\NextPress_Script_Modules;
+
 
 /**
  * Class Uri_Assets
@@ -21,6 +23,7 @@ use NextPress\Uri_Assets\GraphQL\Utils\WP_Assets;
  * @property string   $uri
  * @property string[] $enqueuedScriptsQueue
  * @property string[] $enqueuedStylesheetsQueue
+ * @property array    $importMap
  */
 class Uri_Assets extends Model {
 	/**
@@ -100,7 +103,10 @@ class Uri_Assets extends Model {
 	public static function all_dependencies_in_footer( \_WP_Dependency $script ) {
 		$dependencies = $script->deps;
 		foreach ( $dependencies as $handle ) {
-			$dependency = wp_scripts()->registered[ $handle ];
+			$dependency = wp_scripts()->registered[ $handle ] ?? null;
+			if ( null === $dependency ) {
+				continue;
+			}
 			if ( 1 === self::get_script_location( $dependency ) ) {
 				continue;
 			}
@@ -221,13 +227,17 @@ class Uri_Assets extends Model {
 	}
 
 	/**
-	 * Simulates WP template rendering and returns the enqueued asset queue.
+	 * Simulates WP template rendering to trigger all asset enqueue hooks.
 	 *
-	 * Fires wp_head, renders content, fires sidebar and wp_footer to trigger
-	 * all asset enqueue hooks, then flattens and returns the queue.
+	 * Fires wp_head, renders the post content (which processes blocks and
+	 * enqueues their scripts/styles/modules), fires sidebar and wp_footer,
+	 * then discards all output. After this call, $wp_scripts, $wp_styles,
+	 * and wp_script_modules() contain the full set of enqueued assets for
+	 * the resolved URI.
 	 *
+	 * @return void
 	 */
-	public function setup() {
+	protected function simulate_render() {
 		do_action( 'nextpress_pre_simulate_render' );
 
 		ob_start();
@@ -235,6 +245,14 @@ class Uri_Assets extends Model {
 
 		$this->data->contentRendered;
 		$this->data->ID;
+
+		// Block rendering populates the Style Engine with layout CSS
+		// (e.g. gallery column rules) but wp_enqueue_stored_styles() already
+		// ran during wp_head — before the blocks were rendered. Re-run it
+		// so the generated CSS (core-block-supports) gets enqueued.
+		if ( function_exists( 'wp_enqueue_stored_styles' ) ) {
+			wp_enqueue_stored_styles();
+		}
 
 		do_action( 'get_sidebar', null, [] );
 		wp_footer();
@@ -262,8 +280,21 @@ class Uri_Assets extends Model {
 				return $this->path;
 			},
 			'enqueuedScriptsQueue'     => function () {
-				global $wp_scripts;
 
+				$this->simulate_render();
+
+				// Fold enqueued script modules into $wp_scripts so they
+				// appear alongside classic scripts. Wrapped in try/catch
+				// so a failure here doesn't break the classic scripts list.
+				try {
+					WP_Assets::collect_script_modules_queue();
+				} catch ( \Throwable $e ) {
+					graphql_debug(
+						sprintf( 'collect_script_modules_queue failed: %s', $e->getMessage() )
+					);
+				}
+
+				global $wp_scripts;
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_scripts->queue ?? [], $wp_scripts );
 
 				$wp_scripts->reset();
@@ -274,12 +305,21 @@ class Uri_Assets extends Model {
 			'enqueuedStylesheetsQueue' => function () {
 				global $wp_styles;
 
+				$this->simulate_render();
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );
 
 				$wp_styles->reset();
 				$wp_styles->queue = [];
 
 				return $queue;
+			},
+			'importMap'                => function () {
+				$this->simulate_render();
+
+				$import_map = NextPress_Script_Modules::get_enqueued_import_map();
+				graphql_debug( sprintf( 'importMap: keys=%s', wp_json_encode( array_keys( $import_map ) ) ) );
+				graphql_debug( sprintf( 'importMap imports: %s', wp_json_encode( $import_map['imports'] ?? 'none' ) ) );
+				return $import_map['imports'] ?? [];
 			},
 		];
 	}

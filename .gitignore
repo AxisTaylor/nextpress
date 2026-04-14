@@ -10,6 +10,7 @@ dist/
 # Environment
 .env
 !.env.example
+!.env.testing
 !packages/backend-4-examples/.env
 
 # Test output

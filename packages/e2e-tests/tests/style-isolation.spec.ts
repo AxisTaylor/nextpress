@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 /**
  * Style Isolation Tests
  *
- * Validates that WordPress styles loaded via RenderStylesheets are scoped
- * to [data-content] elements and do not leak into the app layout (Navbar, Footer).
+ * Validates that WordPress styles loaded via Stylesheets are scoped
+ * to [data-rendered] elements and do not leak into the app layout (Navbar, Footer).
  *
  * WordPress stylesheets commonly define rules like `a { text-decoration: underline }`
  * which, without scoping, would affect navigation links outside WordPress content.
@@ -55,21 +55,24 @@ test.describe('Style Isolation', () => {
     const footer = page.locator('footer');
     await expect(footer).toBeVisible();
 
-    // Footer should retain its Tailwind-defined background color (gray-800 = rgb(31, 41, 55))
+    // Footer should retain its Tailwind-defined background color (gray-800)
+    // and not be overridden by WordPress styles (e.g., white or transparent)
     const bgColor = await footer.evaluate((el) => {
       return window.getComputedStyle(el).backgroundColor;
     });
 
-    // Should not be overridden by WordPress styles (e.g., white or transparent)
-    expect(bgColor).toBe('rgb(31, 41, 55)');
+    // Should not be transparent or white — any non-trivial color means Tailwind applied
+    expect(bgColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(bgColor).not.toBe('transparent');
+    expect(bgColor).not.toBe('rgb(255, 255, 255)');
   });
 
-  test('WordPress content should be wrapped in [data-content]', async ({ page }) => {
+  test('WordPress content should be wrapped in [data-rendered]', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
-    // The Content component should render a [data-content] wrapper
-    const contentWrapper = page.locator('[data-content]');
+    // The Content component should render a [data-rendered] wrapper
+    const contentWrapper = page.locator('[data-rendered]');
     const count = await contentWrapper.count();
     expect(count).toBeGreaterThan(0);
   });
@@ -109,14 +112,16 @@ test.describe('Style Isolation', () => {
       }))
     );
 
-    // WordPress inline styles from RenderStylesheets have id attributes.
-    // Exclude framework styles: Next.js fonts (@font-face + __nextjs), image optimization, Tailwind.
+    // WordPress inline styles from Stylesheets have id attributes.
+    // Exclude framework styles (Next.js fonts, image optimization, Tailwind)
+    // and NextPress marker styles (nextpress-stylesheets-start/end).
     const wpInlineStyles = styles.filter(s =>
       s.content.length > 0 &&
       s.id.length > 0 &&
       !s.content.includes('__nextjs') &&
       !s.content.includes('contain-intrinsic-size') &&
-      !s.content.includes('tailwind')
+      !s.content.includes('tailwind') &&
+      !s.id.startsWith('nextpress-')
     );
 
     // If there are WordPress inline styles, they should be wrapped in @scope

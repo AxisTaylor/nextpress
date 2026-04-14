@@ -1,0 +1,16 @@
+{
+  "name": "complex-blocks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Test blocks for NextPress e2e testing — exercises viewScriptModule, @wordpress/interactivity, deferred classic scripts, and session-based WC actions.",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  },
+  "dependencies": {
+    "@wordpress/interactivity": "^6.0.0"
+  }
+}
