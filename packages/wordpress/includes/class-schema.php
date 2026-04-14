@@ -48,9 +48,11 @@ class Schema {
 		// Enums.
 		require_once $types_path . 'enum/class-script-loading-group-enum.php';
 		require_once $types_path . 'enum/class-script-type-enum.php';
+		require_once $types_path . 'enum/class-import-map-scheme-enum.php';
 
 		// Object types and field extensions.
 		require_once $types_path . 'object/class-enqueued-asset-fields.php';
+		require_once $types_path . 'object/class-wp-import.php';
 		require_once $types_path . 'object/class-uri-assets.php';
 		require_once $types_path . 'object/class-global-styles.php';
 		require_once $types_path . 'object/class-root-query.php';
@@ -64,6 +66,8 @@ class Schema {
 	public function register_schema() {
 		Type\Enum\Script_Loading_Group_Enum::register();
 		Type\Enum\Script_Type_Enum::register();
+		Type\Enum\Import_Map_Scheme_Enum::register();
+		Type\Object\WP_Import::register();
 		Type\Object\Enqueued_Asset_Fields::register();
 		Type\Object\Uri_Assets::register();
 		Type\Object\Global_Styles::register();

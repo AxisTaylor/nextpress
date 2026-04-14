@@ -3,7 +3,14 @@
   "private": true,
   "description": "",
   "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "@wordpress/api-fetch": "^7.43.0",
+    "@wordpress/interactivity": "^6.43.0",
+    "@wordpress/scripts": "^31.8.0",
+    "copy-webpack-plugin": "^10.2.4",
+    "mini-css-extract-plugin": "^2.10.2",
+    "npm-run-all": "^4.1.5",
+    "ts-loader": "^9.5.7",
+    "tsconfig-paths-webpack-plugin": "^4.2.0"
   },
   "scripts": {
     "start": "npm-run-all --sequential postinstall update-plugins build-images docker",
@@ -14,7 +21,8 @@
     "update-plugins": "composer update",
     "build-images": "docker compose build",
     "postinstall": "composer install",
-    "save-db": "docker exec wp-backend-db /usr/bin/mysqldump -u root -pnot-so-secure wordpress > ./import/dev-backup-$(date +%Y%m%d%H%M%S).sql"
+    "save-db": "docker exec wp-backend-db /usr/bin/mysqldump -u root -pnot-so-secure wordpress > ./import/dev-backup-$(date +%Y%m%d%H%M%S).sql",
+    "build": "rm -rf web/app/plugins/complex-blocks/dist && wp-scripts build"
   },
   "keywords": [],
   "author": "AxisTaylor, LLC <support@axistaylor.com>"

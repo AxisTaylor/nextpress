@@ -12,7 +12,8 @@
   },
   "scripts": {
     "update-versions": "ts-node scripts/update-versions.ts",
-    "build": "run-p build:js build:wordpress",
+    "build": "run-p build:backend build:js build:wordpress",
+    "build:backend": "npm run build -w ./packages/backend-4-examples",
     "build:js": "npm run build -w ./packages/js",
     "build:wordpress": "npm run build -w ./packages/wordpress",
     "build:nextjs-example": "npm run build -w ./packages/nextjs-example",

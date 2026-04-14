@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "complex-blocks/interactive-counter",
+  "version": "1.0.0",
+  "title": "Interactive Counter",
+  "category": "widgets",
+  "description": "A counter block using the WordPress Interactivity API. Increments on click.",
+  "supports": {
+    "html": false,
+    "interactivity": {
+      "clientNavigation": true
+    }
+  },
+  "attributes": {
+    "label": {
+      "type": "string",
+      "default": "Count"
+    }
+  },
+  "textdomain": "complex-blocks",
+  "render": "file:./render.php",
+  "viewScriptModule": "file:./view.js"
+}

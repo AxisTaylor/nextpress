@@ -59,6 +59,6 @@ test.describe('Debug wc-settings Script', () => {
     console.log('\nAll console messages:');
     consoleMessages.forEach(msg => console.log('  ', msg));
 
-    expect(scriptErrors.length).toBe(0);
+    expect(scriptErrors).toEqual([]);
   });
 });

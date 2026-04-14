@@ -33,16 +33,21 @@ class WP_Assets {
 				$script    = $registered_scripts[ $handle ];
 				$handles[] = $script->handle;
 
-				$formatted_dependencies = array_map(
-					[ __CLASS__, 'format_module_dependency' ],
-					(array) ( $script->deps ?? [] )
-				);
-				$dependencies = self::flatten_enqueued_assets_list( $formatted_dependencies, $wp_assets, $check_script_modules );
-				if ( empty( $dependencies ) ) {
-					continue;
+				// Don't recurse into MODULE dependencies — those are resolved
+				// by the browser's import map, not by <script> tags.
+				$is_module = isset( $script->extra['type'] ) && 'module' === $script->extra['type'];
+				if ( ! $is_module ) {
+					$formatted_dependencies = array_map(
+						[ __CLASS__, 'format_module_dependency' ],
+						(array) ( $script->deps ?? [] )
+					);
+					$dependencies = self::flatten_enqueued_assets_list( $formatted_dependencies, $wp_assets, $check_script_modules );
+					if ( ! empty( $dependencies ) ) {
+						array_unshift( $handles, ...$dependencies );
+					}
 				}
 
-				array_unshift( $handles, ...$dependencies );
+				continue;
 			}
 
 			if ( ! $check_script_modules ) {
@@ -143,6 +148,7 @@ class WP_Assets {
 				(string) ( $data['src'] ?? '' ),
 				$formatted_dependencies,
 				$version,
+				null,
 			);
 			$dependency->add_data( 'type', 'module' );
 			$dependency->add_data( 'group', ! empty( $data['args']['in_footer'] ) ? 1 : 0 );

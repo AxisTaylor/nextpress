@@ -9,10 +9,10 @@ import type { AssetData } from '@axistaylor/nextpress/client';
  * client-side navigation.
  */
 export async function fetchAssets(uri: string): Promise<AssetData> {
-  const [{ stylesheets, scripts }, globalStyles] = await Promise.all([
+  const [{ stylesheets, scripts, importMap }, globalStyles] = await Promise.all([
     fetchStylesAndScriptsByUri(uri),
     fetchGlobalStyles(),
   ]);
 
-  return { stylesheets, scripts, globalStyles };
+  return { stylesheets, scripts, globalStyles, importMap };
 }

@@ -56,6 +56,7 @@ export async function fetchContentByUri(uri: string): Promise<string> {
 async function fetchAssetStructureByUri(uri: string): Promise<{
   scripts: Omit<EnqueuedScript, 'before' | 'after'>[];
   stylesheets: Omit<EnqueuedStylesheet, 'before' | 'after'>[];
+  importMap: Array<{ name: string; path: string }>;
 }> {
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
@@ -65,6 +66,10 @@ async function fetchAssetStructureByUri(uri: string): Promise<{
         assetsByUri(uri: $uri) {
           id
           uri
+          importMap(scheme: RELATIVE) {
+            name
+            path
+          }
           enqueuedStylesheets(first: 500) {
             nodes {
               handle
@@ -80,6 +85,7 @@ async function fetchAssetStructureByUri(uri: string): Promise<{
               version
               group
               location
+              type
               extraData
               dependencies {
                 handle
@@ -96,12 +102,13 @@ async function fetchAssetStructureByUri(uri: string): Promise<{
   const assets = data?.assetsByUri;
 
   if (!assets) {
-    return { scripts: [], stylesheets: [] };
+    return { scripts: [], stylesheets: [], importMap: [] };
   }
 
   return {
     scripts: assets.enqueuedScripts.nodes,
     stylesheets: assets.enqueuedStylesheets.nodes,
+    importMap: assets.importMap ?? [],
   };
 }
 
@@ -174,6 +181,7 @@ async function fetchInlineScriptDataByUri(uri: string): Promise<{
 export async function fetchStylesAndScriptsByUri(uri: string): Promise<{
   scripts: EnqueuedScript[];
   stylesheets: EnqueuedStylesheet[];
+  importMap: Array<{ name: string; path: string }>;
 }> {
   const [structure, inlineData] = await Promise.all([
     fetchAssetStructureByUri(uri),
@@ -198,7 +206,7 @@ export async function fetchStylesAndScriptsByUri(uri: string): Promise<{
     ...(stylesheetInlineMap.get(stylesheet.handle as string) || { before: null, after: null }),
   }));
 
-  return { scripts, stylesheets };
+  return { scripts, stylesheets, importMap: structure.importMap };
 }
 
 /**

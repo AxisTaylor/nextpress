@@ -12,6 +12,7 @@ use GraphQLRelay\Relay;
 use WPGraphQL\Model\Model;
 use GraphQL\Error\UserError;
 use NextPress\Uri_Assets\GraphQL\Utils\WP_Assets;
+use NextPress\Uri_Assets\GraphQL\Utils\NextPress_Script_Modules;
 
 
 /**
@@ -22,6 +23,7 @@ use NextPress\Uri_Assets\GraphQL\Utils\WP_Assets;
  * @property string   $uri
  * @property string[] $enqueuedScriptsQueue
  * @property string[] $enqueuedStylesheetsQueue
+ * @property array    $importMap
  */
 class Uri_Assets extends Model {
 	/**
@@ -302,6 +304,14 @@ class Uri_Assets extends Model {
 				$wp_styles->queue = [];
 
 				return $queue;
+			},
+			'importMap'                => function () {
+				$this->simulate_render();
+
+				$import_map = NextPress_Script_Modules::get_enqueued_import_map();
+				graphql_debug( sprintf( 'importMap: keys=%s', wp_json_encode( array_keys( $import_map ) ) ) );
+				graphql_debug( sprintf( 'importMap imports: %s', wp_json_encode( $import_map['imports'] ?? 'none' ) ) );
+				return $import_map['imports'] ?? [];
 			},
 		];
 	}

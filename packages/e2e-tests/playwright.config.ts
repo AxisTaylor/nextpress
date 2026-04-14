@@ -77,7 +77,7 @@ export default defineConfig({
       command: 'npm run dev:wp-backend',
       cwd: '../..',
       // PHP service waits for DB healthcheck (wp_options table exists) before starting
-      url: 'http://localhost:8080/wp/graphql',
+      url: 'http://localhost:8080/health',
       timeout: 180000, // 3 minutes for MySQL init + DB import in CI
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',

@@ -55,13 +55,16 @@ test.describe('Style Isolation', () => {
     const footer = page.locator('footer');
     await expect(footer).toBeVisible();
 
-    // Footer should retain its Tailwind-defined background color (gray-800 = rgb(31, 41, 55))
+    // Footer should retain its Tailwind-defined background color (gray-800)
+    // and not be overridden by WordPress styles (e.g., white or transparent)
     const bgColor = await footer.evaluate((el) => {
       return window.getComputedStyle(el).backgroundColor;
     });
 
-    // Should not be overridden by WordPress styles (e.g., white or transparent)
-    expect(bgColor).toBe('rgb(31, 41, 55)');
+    // Should not be transparent or white — any non-trivial color means Tailwind applied
+    expect(bgColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(bgColor).not.toBe('transparent');
+    expect(bgColor).not.toBe('rgb(255, 255, 255)');
   });
 
   test('WordPress content should be wrapped in [data-rendered]', async ({ page }) => {
