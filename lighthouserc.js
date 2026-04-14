@@ -19,17 +19,35 @@ module.exports = {
     assert: {
       preset: 'lighthouse:recommended',
       assertions: {
+        // Core score thresholds
         'categories:performance': ['warn', { minScore: 0.7 }],
         'categories:accessibility': ['warn', { minScore: 0.9 }],
         'categories:best-practices': ['warn', { minScore: 0.9 }],
         'categories:seo': ['warn', { minScore: 0.9 }],
+
+        // Web Vitals
         'first-contentful-paint': ['warn', { maxNumericValue: 2500 }],
         'largest-contentful-paint': ['warn', { maxNumericValue: 4000 }],
         'total-blocking-time': ['warn', { maxNumericValue: 300 }],
         'cumulative-layout-shift': ['warn', { maxNumericValue: 0.1 }],
-        // Disable checks that don't apply to localhost testing
+
+        // Disabled — not applicable to localhost
         'uses-http2': 'off',
         'redirects-http': 'off',
+
+        // Back/forward cache is affected by Next.js internals and
+        // third-party scripts (Stripe) — not actionable.
+        'bf-cache': 'off',
+
+        // Image optimization requires next/image or a CDN — out of
+        // scope for the example app.
+        'uses-responsive-images': 'warn',
+        'image-delivery-insight': 'warn',
+        'modern-image-formats': 'warn',
+
+        // Console errors from third-party scripts (Stripe, WC blocks)
+        // are not actionable from NextPress.
+        'errors-in-console': 'warn',
       },
     },
     upload: {
