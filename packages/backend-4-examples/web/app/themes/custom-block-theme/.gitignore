@@ -2,8 +2,7 @@
 style.css
 editor.css
 
-# Node modules
-node_modules/
+!src/*
 
 # Build artifacts
 *.map
