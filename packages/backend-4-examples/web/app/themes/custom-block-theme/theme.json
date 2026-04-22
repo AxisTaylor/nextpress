@@ -1,0 +1,293 @@
+{
+	"$schema": "https://schemas.wp.org/wp/6.7/theme.json",
+	"version": 3,
+	"settings": {
+		"appearanceTools": true,
+		"useRootPaddingAwareAlignments": true,
+		"layout": {
+			"contentSize": "840px",
+			"wideSize": "1100px"
+		},
+		"color": {
+			"defaultPalette": false,
+			"defaultGradients": false,
+			"custom": true,
+			"customGradient": false,
+			"palette": [
+				{
+					"name": "Background",
+					"slug": "background",
+					"color": "var(--background)"
+				},
+				{
+					"name": "Foreground",
+					"slug": "foreground",
+					"color": "var(--foreground)"
+				},
+				{
+					"name": "Primary",
+					"slug": "primary",
+					"color": "var(--primary)"
+				},
+				{
+					"name": "Primary Foreground",
+					"slug": "primary-foreground",
+					"color": "var(--primary-foreground)"
+				},
+				{
+					"name": "Secondary",
+					"slug": "secondary",
+					"color": "var(--secondary)"
+				},
+				{
+					"name": "Secondary Foreground",
+					"slug": "secondary-foreground",
+					"color": "var(--secondary-foreground)"
+				},
+				{
+					"name": "Accent",
+					"slug": "accent",
+					"color": "var(--accent)"
+				},
+				{
+					"name": "Accent Foreground",
+					"slug": "accent-foreground",
+					"color": "var(--accent-foreground)"
+				},
+				{
+					"name": "Destructive",
+					"slug": "destructive",
+					"color": "var(--destructive)"
+				},
+				{
+					"name": "Destructive Foreground",
+					"slug": "destructive-foreground",
+					"color": "var(--destructive-foreground)"
+				},
+				{
+					"name": "Muted",
+					"slug": "muted",
+					"color": "var(--muted)"
+				},
+				{
+					"name": "Muted Foreground",
+					"slug": "muted-foreground",
+					"color": "var(--muted-foreground)"
+				},
+				{
+					"name": "Card",
+					"slug": "card",
+					"color": "var(--card)"
+				},
+				{
+					"name": "Card Foreground",
+					"slug": "card-foreground",
+					"color": "var(--card-foreground)"
+				},
+				{
+					"name": "Border",
+					"slug": "border",
+					"color": "var(--border)"
+				},
+				{
+					"name": "Input",
+					"slug": "input",
+					"color": "var(--input)"
+				},
+				{
+					"name": "Ring",
+					"slug": "ring",
+					"color": "var(--ring)"
+				}
+			]
+		},
+		"typography": {
+			"defaultFontSizes": false,
+			"fontSizes": [
+				{
+					"slug": "xs",
+					"size": "var(--text-xs)",
+					"name": "Extra Small",
+					"fluid": false
+				},
+				{
+					"slug": "sm",
+					"size": "var(--text-sm)",
+					"name": "Small",
+					"fluid": false
+				},
+				{
+					"slug": "base",
+					"size": "var(--text-base)",
+					"name": "Base",
+					"fluid": false
+				},
+				{
+					"slug": "lg",
+					"size": "var(--text-lg)",
+					"name": "Large",
+					"fluid": false
+				},
+				{
+					"slug": "xl",
+					"size": "var(--text-xl)",
+					"name": "Extra Large",
+					"fluid": false
+				},
+				{
+					"slug": "2xl",
+					"size": "var(--text-2xl)",
+					"name": "2X Large",
+					"fluid": false
+				},
+				{
+					"slug": "3xl",
+					"size": "var(--text-3xl)",
+					"name": "3X Large",
+					"fluid": false
+				},
+				{
+					"slug": "4xl",
+					"size": "var(--text-4xl)",
+					"name": "4X Large",
+					"fluid": false
+				},
+				{
+					"slug": "5xl",
+					"size": "var(--text-5xl)",
+					"name": "5X Large",
+					"fluid": false
+				},
+				{
+					"slug": "6xl",
+					"size": "var(--text-6xl)",
+					"name": "6X Large",
+					"fluid": false
+				}
+			],
+			"fontFamilies": [
+				{
+					"fontFamily": "var(--font-family-sans)",
+					"slug": "sans",
+					"name": "Sans"
+				},
+				{
+					"fontFamily": "var(--font-family-serif)",
+					"slug": "serif",
+					"name": "Serif"
+				}
+			]
+		},
+		"spacing": {
+			"units": ["px", "em", "rem", "vh", "vw", "%"],
+			"padding": true,
+			"margin": true,
+			"spacingSizes": [
+				{ "slug": "1", "size": "var(--spacing-1)", "name": "0.25rem" },
+				{ "slug": "2", "size": "var(--spacing-2)", "name": "0.5rem" },
+				{ "slug": "3", "size": "var(--spacing-3)", "name": "0.75rem" },
+				{ "slug": "4", "size": "var(--spacing-4)", "name": "1rem" },
+				{ "slug": "5", "size": "var(--spacing-5)", "name": "1.25rem" },
+				{ "slug": "6", "size": "var(--spacing-6)", "name": "1.5rem" },
+				{ "slug": "8", "size": "var(--spacing-8)", "name": "2rem" },
+				{ "slug": "10", "size": "var(--spacing-10)", "name": "2.5rem" },
+				{ "slug": "12", "size": "var(--spacing-12)", "name": "3rem" },
+				{ "slug": "16", "size": "var(--spacing-16)", "name": "4rem" },
+				{ "slug": "20", "size": "var(--spacing-20)", "name": "5rem" },
+				{ "slug": "24", "size": "var(--spacing-24)", "name": "6rem" },
+				{ "slug": "32", "size": "var(--spacing-32)", "name": "8rem" }
+			]
+		}
+	},
+	"styles": {
+		"color": {
+			"background": "var(--background)",
+			"text": "var(--foreground)"
+		},
+		"typography": {
+			"fontFamily": "var(--font-family-sans)",
+			"fontSize": "var(--text-base)",
+			"lineHeight": "1.6"
+		},
+		"spacing": {
+			"padding": {
+				"top": "var(--spacing-8)",
+				"right": "var(--spacing-8)",
+				"bottom": "var(--spacing-8)",
+				"left": "var(--spacing-8)"
+			}
+		},
+		"elements": {
+			"link": {
+				"color": {
+					"text": "var(--primary)"
+				},
+				":hover": {
+					"color": {
+						"text": "var(--secondary)"
+					}
+				}
+			},
+			"button": {
+				"color": {
+					"background": "var(--primary)",
+					"text": "var(--primary-foreground)"
+				},
+				"border": {
+					"radius": "var(--radius)"
+				},
+				":hover": {
+					"color": {
+						"background": "var(--accent)"
+					}
+				}
+			},
+			"heading": {
+				"color": {
+					"text": "var(--foreground)"
+				},
+				"typography": {
+					"fontFamily": "var(--font-family-serif)"
+				}
+			}
+		},
+		"blocks": {
+			"core/paragraph": {
+				"color": {
+					"text": "var(--foreground)"
+				}
+			},
+			"core/separator": {
+				"color": {
+					"background": "var(--border)"
+				}
+			},
+			"core/navigation": {
+				"elements": {
+					"link": {
+						"color": {
+							"text": "var(--foreground)"
+						},
+						":hover": {
+							"color": {
+								"text": "var(--primary)"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"templateParts": [
+		{
+			"name": "header",
+			"title": "Header",
+			"area": "header"
+		},
+		{
+			"name": "footer",
+			"title": "Footer",
+			"area": "footer"
+		}
+	]
+}

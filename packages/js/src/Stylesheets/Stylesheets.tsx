@@ -9,7 +9,7 @@ import { scopeInlineStyles } from '@/utils/scopeStyles';
 
 export interface StyleProps {
   id?: string;
-  precedence?: 'low'|'medium'|'high';
+  precedence?: string;
   href?: string;
   children?: ReactNode;
 }

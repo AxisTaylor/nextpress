@@ -1,268 +1,148 @@
 <!--
 title: "Content Component"
-description: "Render WordPress HTML content in React with automatic Gutenberg block handling and custom parsers."
+description: "Render WordPress HTML content in React with layout classes, automatic scoping, and custom parsers."
 author: "AxisTaylor, LLC"
-keywords: "NextPress, Content component, WordPress, Gutenberg, HTML rendering, React"
+keywords: "NextPress, Content component, WordPress, Gutenberg, HTML rendering, React, contentCssClasses"
 -->
 
 # Content Component
 
-The `Content` component renders WordPress HTML content in React, automatically handling Gutenberg blocks, HTML entities, and table structures.
+The `Content` component renders WordPress HTML content in React, automatically handling Gutenberg blocks, HTML entities, table structures, and WordPress layout classes.
 
 ## Basic Usage
 
 ```tsx
 import { Content } from '@axistaylor/nextpress';
 
-export default function Page({ content }: { content: string }) {
-  return <Content content={content} />;
+export default function Page({ content, contentCssClasses }: {
+  content: string;
+  contentCssClasses: string[];
+}) {
+  return <Content content={content} contentCssClasses={contentCssClasses} />;
 }
 ```
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `content` | `string` | Yes | WordPress HTML content to render |
-| `customParser` | `CustomParserCallback` | No | Function to customize element rendering |
-| `instance` | `string` | No | WordPress instance slug (for multi-WordPress setups) |
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `content` | `string` | — | WordPress HTML content to render |
+| `contentCssClasses` | `string[]` | `[]` | Layout classes from the WP template (see [Content CSS](../content-css.md)) |
+| `parsers` | `CustomParser[]` | `[]` | Array of custom parser functions (see [Parsers](./parsers.md)) |
+| `linksAs` | `FC` | `'a'` | Component for rendering links (e.g. `next/link`) |
+| `instance` | `string` | `'default'` | WordPress instance slug |
+| `bypassExternalLinks` | `boolean` | `false` | Leave external links as native `<a>` tags |
+| `parser` | `CustomParser` | — | **Deprecated.** Use `parsers` instead |
 
 ## How It Works
 
 The `Content` component:
 
-1. **Wraps output in `[data-rendered]`** - The parsed HTML is rendered inside `<div data-rendered>…</div>`. This attribute is the scope root used by [GlobalStyles](./global-styles.md) and any stylesheets piped through [`proxyByWCR`](./proxy-by-wcr.md), so WordPress styles apply only to this subtree and do not leak into your application chrome (navbar, footer, etc.).
-2. **Parses HTML** - Uses `html-react-parser` to convert HTML string to React elements
-3. **Decodes Entities** - Automatically decodes HTML entities (`&amp;` → `&`, `&lt;` → `<`, etc.)
-4. **Fixes Tables** - Wraps table rows in `<tbody>` if missing (required by React)
-5. **Preserves Attributes** - Maintains `data-*` attributes, `aria-*` attributes, and class names
+1. **Wraps output in `[data-rendered]`** — Parsed HTML is rendered inside `<div data-rendered>`. This attribute is the scope root that [GlobalStyles](./global-styles.md) and [Stylesheets](./stylesheets.md) use to isolate WordPress CSS from your application styling.
+2. **Applies layout classes** — When `contentCssClasses` is provided, an inner wrapper `<div>` receives the WP layout classes (`is-layout-constrained`, `has-global-padding`, etc.) so WordPress layout spacing and content-width constraints work correctly.
+3. **Parses HTML** — Uses `html-react-parser` to convert HTML string to React elements.
+4. **Fixes Tables** — Wraps table rows in `<tbody>` if missing (required by React).
+5. **Rewrites URLs** — Internal WordPress links are rewritten to Next.js routes when `formatPermalinks` is enabled (the default).
 
-> **Note on styling:** If you use Tailwind's default Preflight layer on the same routes, its element-level resets (`a { color: inherit }`, etc.) can override the WordPress scoped global stylesheet inside `[data-rendered]`. See [Troubleshooting → Tailwind Preflight Overriding WordPress Styles](../troubleshooting.md#tailwind-preflight-overriding-wordpress-styles).
+## Fetching Content with Layout Classes
+
+The `contentCssClasses` field is registered on the WPGraphQL `ContentNode` interface by the NextPress WordPress plugin. It returns the CSS classes WordPress would apply to the post-content wrapper based on the template's layout attribute.
+
+```graphql
+query GetPage($uri: String!) {
+  nodeByUri(uri: $uri) {
+    ... on Page {
+      content
+      contentCssClasses
+    }
+    ... on Post {
+      content
+      contentCssClasses
+    }
+  }
+}
+```
+
+### Full Page Example
+
+```tsx
+// app/(wordpress)/[[...uri]]/page.tsx
+import { Content } from '@axistaylor/nextpress';
+import { nextImageParser } from '@axistaylor/nextpress/client';
+import Link from 'next/link';
+
+async function fetchContent(uri: string) {
+  const res = await fetch(process.env.GRAPHQL_ENDPOINT!, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `query ($uri: String!) {
+        nodeByUri(uri: $uri) {
+          ... on Page { content contentCssClasses }
+          ... on Post { content contentCssClasses }
+        }
+      }`,
+      variables: { uri },
+    }),
+  });
+  const { data } = await res.json();
+  return data?.nodeByUri;
+}
+
+export default async function Page({ params }: { params: Promise<{ uri?: string[] }> }) {
+  const { uri: segments } = await params;
+  const uri = '/' + (segments?.join('/') || '');
+  const node = await fetchContent(uri);
+
+  if (!node?.content) return null;
+
+  return (
+    <Content
+      content={node.content}
+      contentCssClasses={node.contentCssClasses}
+      linksAs={Link}
+      parsers={[nextImageParser]}
+    />
+  );
+}
+```
+
+## Layout Classes
+
+WordPress block templates define a layout on the `core/post-content` block (e.g. `{"layout":{"type":"constrained"}}`). This generates CSS classes that control content width, padding, and spacing. Without these classes, your headless content will lack the layout constraints the theme intends.
+
+| Class | Condition | Purpose |
+|-------|-----------|---------|
+| `is-layout-constrained` | `type: "constrained"` | Max-width + auto-margin on children |
+| `is-layout-flow` | `type: "flow"` (default) | Block flow layout |
+| `is-layout-flex` | `type: "flex"` | Flexbox layout |
+| `is-layout-grid` | `type: "grid"` | Grid layout |
+| `has-global-padding` | Constrained + `useRootPaddingAwareAlignments` | Root padding |
+| `wp-block-post-content-is-layout-*` | Always | Block-specific layout hook |
+| `is-vertical` / `is-horizontal` | `orientation` set | Flex/grid direction |
+| `is-content-justification-*` | `justifyContent` set | Content alignment |
+| `is-nowrap` | `flexWrap: "nowrap"` | Prevent flex wrapping |
+
+See [Content CSS](../content-css.md) for a full guide on getting WordPress content to render correctly.
 
 ## Custom Parsers
 
-Custom parsers allow you to intercept and modify how specific HTML elements are rendered. This is useful for:
-
-- Replacing WordPress blocks with React components
-- Adding click handlers or interactivity
-- Modifying styles or classes
-- Lazy loading images
-- Integrating with React state
-
-### Creating a Custom Parser
-
-A custom parser is a function that receives the element's tag name, props, and children, and returns either a React element or `null` to use default rendering:
-
-```tsx
-import { Content, CustomParserCallback } from '@axistaylor/nextpress';
-
-const customParser: CustomParserCallback = (tagName, props, children) => {
-  // Return a React element to override rendering
-  // Return null to use default rendering
-
-  if (tagName === 'img') {
-    // Replace img tags with Next.js Image component
-    return (
-      <Image
-        key={props.key}
-        src={props.src}
-        alt={props.alt || ''}
-        width={800}
-        height={600}
-        className={props.className}
-      />
-    );
-  }
-
-  // Return null for default rendering
-  return null;
-};
-
-export default function Page({ content }: { content: string }) {
-  return <Content content={content} customParser={customParser} />;
-}
-```
-
-### Custom Parser Signature
-
-```ts
-type CustomParserCallback = (
-  tagName: string,
-  props: HTMLReactParserProps & { key?: string },
-  children: React.ReactNode
-) => React.ReactElement | null;
-```
-
-**Parameters:**
-
-- `tagName` - The HTML tag name (e.g., `'div'`, `'img'`, `'a'`)
-- `props` - The element's attributes converted to React props, including:
-  - `className` - CSS classes
-  - `id` - Element ID
-  - `data-*` - Data attributes (as `data-block-name`, etc.)
-  - `key` - React key for list rendering
-- `children` - The element's children (already converted to React nodes)
-
-**Return Value:**
-
-- Return a `React.ReactElement` to replace the element
-- Return `null` to use default rendering
-
-### Example: Replace WordPress Blocks with React Components
-
-```tsx
-import { Content, CustomParserCallback } from '@axistaylor/nextpress';
-import { MyGalleryComponent } from '@/components/Gallery';
-import { MyButtonComponent } from '@/components/Button';
-
-const customParser: CustomParserCallback = (tagName, props, children) => {
-  // Get the WordPress block name from data attribute
-  const blockName = props['data-block-name'];
-
-  // Replace gallery blocks with custom component
-  if (blockName === 'core/gallery') {
-    return (
-      <MyGalleryComponent
-        key={props.key}
-        className={props.className}
-      >
-        {children}
-      </MyGalleryComponent>
-    );
-  }
-
-  // Replace button blocks with interactive component
-  if (blockName === 'core/button') {
-    return (
-      <MyButtonComponent
-        key={props.key}
-        href={props.href}
-        className={props.className}
-      >
-        {children}
-      </MyButtonComponent>
-    );
-  }
-
-  return null;
-};
-```
-
-### Example: Add Click Tracking to Links
-
-```tsx
-const customParser: CustomParserCallback = (tagName, props, children) => {
-  if (tagName === 'a' && props.href) {
-    return (
-      <a
-        key={props.key}
-        href={props.href}
-        className={props.className}
-        onClick={() => {
-          // Track link click
-          analytics.track('link_click', { url: props.href });
-        }}
-      >
-        {children}
-      </a>
-    );
-  }
-
-  return null;
-};
-```
-
-### Example: Lazy Load Images
-
-```tsx
-import Image from 'next/image';
-
-const customParser: CustomParserCallback = (tagName, props, children) => {
-  if (tagName === 'img') {
-    // Extract dimensions from WordPress classes or attributes
-    const width = parseInt(props.width) || 800;
-    const height = parseInt(props.height) || 600;
-
-    return (
-      <Image
-        key={props.key}
-        src={props.src}
-        alt={props.alt || ''}
-        width={width}
-        height={height}
-        loading="lazy"
-        className={props.className}
-      />
-    );
-  }
-
-  return null;
-};
-```
-
-### Example: Transform Specific Block Types
-
-```tsx
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-
-const customParser: CustomParserCallback = (tagName, props, children) => {
-  // Transform code blocks with syntax highlighting
-  if (tagName === 'pre' && props['data-block-name'] === 'core/code') {
-    // Extract language from class (e.g., "language-javascript")
-    const langMatch = props.className?.match(/language-(\w+)/);
-    const language = langMatch ? langMatch[1] : 'text';
-
-    // Get the code text from children
-    const codeText = extractTextFromChildren(children);
-
-    return (
-      <SyntaxHighlighter
-        key={props.key}
-        language={language}
-        className={props.className}
-      >
-        {codeText}
-      </SyntaxHighlighter>
-    );
-  }
-
-  return null;
-};
-
-// Helper to extract text content from React children
-function extractTextFromChildren(children: React.ReactNode): string {
-  if (typeof children === 'string') return children;
-  if (Array.isArray(children)) {
-    return children.map(extractTextFromChildren).join('');
-  }
-  if (children && typeof children === 'object' && 'props' in children) {
-    return extractTextFromChildren(children.props.children);
-  }
-  return '';
-}
-```
+See [Parsers](./parsers.md) for details on `parsers`, `nextImageParser`, and `createUrlRewritingParser`.
 
 ## Multi-WordPress Support
 
 When using multiple WordPress backends, specify the instance:
 
 ```tsx
-<Content content={content} instance="blog" />
+<Content content={content} contentCssClasses={cssClasses} instance="blog" />
 ```
 
 See [Multi-WordPress Setup](../multi-wordpress.md) for configuration details.
 
-## TypeScript
-
-Import the types for full TypeScript support:
-
-```tsx
-import { Content, CustomParserCallback } from '@axistaylor/nextpress';
-import type { HTMLReactParserProps } from 'html-react-parser';
-```
-
 ## Related
 
-- [Getting Started](../getting-started.md) - Initial setup
-- [WPHead](./wp-head.md) - Loading WordPress scripts
-- [Stylesheets](./stylesheets.md) - Loading WordPress styles
+- [Content CSS](../content-css.md) — Full guide to rendering WordPress content CSS correctly
+- [Parsers](./parsers.md) — Built-in and custom content parsers
+- [GlobalStyles](./global-styles.md) — Theme.json global styles
+- [Stylesheets](./stylesheets.md) — WordPress enqueued stylesheets
+- [WPHead](./wp-head.md) — Head assets (combines GlobalStyles + Stylesheets + scripts)

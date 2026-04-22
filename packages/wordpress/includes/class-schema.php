@@ -55,6 +55,7 @@ class Schema {
 		require_once $types_path . 'object/class-wp-import.php';
 		require_once $types_path . 'object/class-uri-assets.php';
 		require_once $types_path . 'object/class-global-styles.php';
+		require_once $types_path . 'object/class-content-node-fields.php';
 		require_once $types_path . 'object/class-root-query.php';
 	}
 
@@ -71,6 +72,7 @@ class Schema {
 		Type\Object\Enqueued_Asset_Fields::register();
 		Type\Object\Uri_Assets::register();
 		Type\Object\Global_Styles::register();
+		Type\Object\Content_Node_Fields::register();
 		Type\Object\Root_Query::register();
 	}
 }

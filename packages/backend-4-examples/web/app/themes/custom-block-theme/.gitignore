@@ -1,0 +1,12 @@
+# Compiled CSS files
+style.css
+editor.css
+
+!src/*
+
+# Build artifacts
+*.map
+
+# OS files
+.DS_Store
+Thumbs.db

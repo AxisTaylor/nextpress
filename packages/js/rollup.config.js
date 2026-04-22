@@ -38,6 +38,7 @@ export default [
       'next/navigation',
       'react',
       'lodash',
+      'clsx',
     ],
   },
   {
@@ -59,6 +60,7 @@ export default [
       'next/navigation',
       'react',
       'lodash',
+      'clsx',
     ],
   },
   {
@@ -91,6 +93,7 @@ export default [
       'next/navigation',
       'react',
       'lodash',
+      'clsx',
     ],
   },
   {
@@ -112,6 +115,7 @@ export default [
       'next/navigation',
       'react',
       'lodash',
+      'clsx',
     ],
   },
   {

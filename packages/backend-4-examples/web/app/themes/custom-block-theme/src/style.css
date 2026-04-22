@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: system-ui, -apple-system, sans-serif;
+  --font-family-serif: Georgia, 'Times New Roman', Times, serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 4rem;
+
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+  --spacing-32: 8rem;
+
+  --color-primary: oklch(0.328 0.068 257.3);
+  --color-primary-foreground: oklch(0.935 0.043 137.9);
+  --color-secondary: oklch(0.560 0.078 238.0);
+  --color-secondary-foreground: oklch(0.935 0.043 137.9);
+  --color-accent: oklch(0.521 0.176 21.9);
+  --color-accent-foreground: oklch(0.935 0.043 137.9);
+  --color-destructive: oklch(0.612 0.208 22.2);
+  --color-destructive-foreground: oklch(0.935 0.043 137.9);
+  --color-muted: oklch(0.959 0.027 137.0);
+  --color-muted-foreground: oklch(0.476 0.066 237.3);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.221 0.039 258.3);
+  --color-border: oklch(0.935 0.043 137.9);
+  --color-input: oklch(0.935 0.043 137.9);
+  --color-ring: oklch(0.535 0.123 257.5);
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.221 0.039 258.3);
+}
+
+/* Light mode */
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+  --radius: 0.5rem;
+}
+
+/* Dark mode */
+.dark {
+  --background: oklch(0.082 0.008 240.8);
+  --foreground: oklch(0.935 0.043 137.9);
+  --card: oklch(0.221 0.039 258.3);
+  --card-foreground: oklch(0.935 0.043 137.9);
+  --primary: oklch(0.744 0.073 257.2);
+  --primary-foreground: oklch(0.082 0.008 240.8);
+  --secondary: oklch(0.781 0.064 234.8);
+  --secondary-foreground: oklch(0.082 0.008 240.8);
+  --accent: oklch(0.710 0.148 16.4);
+  --accent-foreground: oklch(0.935 0.043 137.9);
+  --destructive: oklch(0.710 0.148 16.4);
+  --destructive-foreground: oklch(0.099 0.017 133.2);
+  --muted: oklch(0.221 0.039 258.3);
+  --muted-foreground: oklch(0.890 0.032 233.4);
+  --border: oklch(0.400 0.087 257.0);
+  --input: oklch(0.400 0.087 257.0);
+  --ring: oklch(0.673 0.095 236.5);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-family-sans);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-serif);
+    color: var(--foreground);
+  }
+
+  h1 { font-size: var(--text-5xl); font-weight: 700; }
+  h2 { font-size: var(--text-4xl); font-weight: 700; }
+  h3 { font-size: var(--text-3xl); font-weight: 700; }
+  h4 { font-size: var(--text-2xl); font-weight: 600; }
+  h5 { font-size: var(--text-lg); font-weight: 600; }
+  h6 { font-size: var(--text-base); font-weight: 600; }
+
+  a {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+
+  a:hover {
+    color: var(--secondary);
+  }
+
+  /* WP buttons */
+  .wp-block-button__link,
+  .wp-element-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    background-color: var(--primary);
+    padding: 0.5rem 1rem;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--primary-foreground);
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .wp-block-button__link:hover,
+  .wp-element-button:hover {
+    background-color: var(--accent) !important;
+    text-decoration: none;
+  }
+
+  /* Lists */
+  ul { list-style-type: disc; padding-left: 1.5rem; }
+  ol { list-style-type: decimal; padding-left: 1.5rem; }
+
+  /* Separators */
+  hr, .wp-block-separator {
+    border-color: var(--border);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Code */
+  code {
+    background-color: var(--muted);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: var(--text-sm);
+  }
+
+  pre {
+    background-color: var(--muted);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: 1rem;
+    font-style: italic;
+    color: var(--muted-foreground);
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid var(--border); padding: 0.5rem 1rem; }
+  th { background-color: var(--muted); font-weight: 600; }
+
+  /* Layout */
+  body { max-width: 100vw; overflow-x: hidden; }
+  :where(.wp-site-blocks) > * { margin-block: 0; }
+  :where(.wp-block-columns) { margin-bottom: 0 !important; }
+
+  .wp-block-post-content > *,
+  .is-layout-constrained > *:not(.alignwide):not(.alignfull) {
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .alignwide,
+  .wp-block-post-content > .alignwide,
+  .is-layout-constrained > .alignwide {
+    max-width: 1100px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .alignfull,
+  .wp-block-post-content > .alignfull,
+  .is-layout-constrained > .alignfull {
+    max-width: none !important;
+    width: 100vw !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+  }
+
+  .wp-block-column .alignfull,
+  .wp-block-columns .wp-block-column > .alignfull {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}

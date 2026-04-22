@@ -27,10 +27,17 @@ export default async function Page({ params: paramsPromise }: PageParams) {
     uri = params.uri;
   }
 
-  const content = await fetchContentByUri(uri);
-  if (!content) {
+  const data = await fetchContentByUri(uri);
+  if (!data) {
     console.error(`Failed to find page content for: ${uri}`);
     return null;
   }
-  return <Content content={content} linksAs={Link as unknown as FC<JSX.IntrinsicElements['a']>} parsers={[nextImageParser]} />;
+  return (
+    <Content
+      content={data.content}
+      contentCssClasses={data.contentCssClasses}
+      linksAs={Link as unknown as FC<JSX.IntrinsicElements['a']>}
+      parsers={[nextImageParser]}
+    />
+  );
 }

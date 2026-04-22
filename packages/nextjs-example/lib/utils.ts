@@ -8,7 +8,12 @@ import { cookies } from 'next/headers';
  * Cart/checkout content is WC Blocks markup; actual user data is loaded client-side.
  * Caching controlled at the route level via `revalidate` / `dynamic` exports.
  */
-export async function fetchContentByUri(uri: string): Promise<string> {
+export interface ContentByUri {
+  content: string;
+  contentCssClasses: string[];
+}
+
+export async function fetchContentByUri(uri: string): Promise<ContentByUri | null> {
   const response = await fetch(process.env.GRAPHQL_ENDPOINT as string, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -17,9 +22,11 @@ export async function fetchContentByUri(uri: string): Promise<string> {
         nodeByUri(uri: $uri) {
           ... on Page {
             content
+            contentCssClasses
           }
           ... on Post {
             content
+            contentCssClasses
           }
         }
       }`,
@@ -29,7 +36,7 @@ export async function fetchContentByUri(uri: string): Promise<string> {
 
   if (!response.ok) {
     console.error(`[fetchContentByUri] GraphQL error for ${uri}:`, response.status);
-    return '';
+    return null;
   }
 
   let data;
@@ -38,15 +45,18 @@ export async function fetchContentByUri(uri: string): Promise<string> {
     data = jsonResponse.data;
   } catch (error) {
     console.error(`[fetchContentByUri] Failed to parse JSON for ${uri}:`, error);
-    return '';
+    return null;
   }
 
   const node = data?.nodeByUri;
   if (!node) {
-    return '';
+    return null;
   }
 
-  return node.content;
+  return {
+    content: node.content || '',
+    contentCssClasses: node.contentCssClasses || [],
+  };
 }
 
 /**

@@ -51,6 +51,7 @@ export function GlobalStyles({
           id="nextpress-global-styles"
           data-nextpress="global"
           dangerouslySetInnerHTML={{ __html: scopeInlineStyles(stylesheet) }}
+          precedence="high"
         />
       )}
       {customCss && (

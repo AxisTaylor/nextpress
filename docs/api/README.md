@@ -15,7 +15,7 @@ Complete reference for all NextPress exports.
 |--------|-------------|
 | [WPHead](./wp-head.md) | Renders all `<head>` assets: global styles, stylesheets, import map, and header scripts |
 | [WPFooter](./wp-footer.md) | Renders footer/body scripts |
-| [Content](./content.md) | Renders WordPress HTML content with custom parsers (wraps output in `[data-rendered]`) |
+| [Content](./content.md) | Renders WordPress HTML content with layout classes and custom parsers (wraps output in `[data-rendered]`) |
 
 ### Lower-Level Components
 

@@ -17,6 +17,7 @@ A comprehensive toolkit for rendering WordPress Gutenberg content 1:1 in Next.js
 
 ### Guides
 - [Getting Started](./getting-started.md) — Installation, setup, and your first WordPress page
+- [Content CSS](./content-css.md) — How to render WordPress content CSS correctly without breaking your app styles
 - [Multi-WordPress Setup](./multi-wordpress.md) — Connect to multiple WordPress backends
 - [WordPress Plugin](./wordpress-plugin.md) — Companion plugin for enhanced functionality
 - [Troubleshooting](./troubleshooting.md) — Common issues and solutions
