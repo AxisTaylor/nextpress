@@ -1,4 +1,5 @@
 import React, { FC } from 'react';
+import clsx from 'clsx';
 import { getWPInstance } from '@/config/getWPInstance';
 import { parseHtml, CustomParser } from '@/utils/parseHtml';
 import { createUrlRewritingParser } from '@/parsers/urlRewritingParser';
@@ -12,6 +13,8 @@ export interface ContentProps {
   parsers?: CustomParser[];
   linksAs?: FC<JSX.IntrinsicElements['a']>;
   bypassExternalLinks?: boolean;
+  /** CSS classes from the WP template layout (e.g. has-global-padding, is-layout-constrained). */
+  contentCssClasses?: string[];
 }
 
 /**
@@ -31,7 +34,15 @@ function fixInvalidHtml(html: string): string {
   );
 }
 
-export function Content({ content, parser, parsers, instance = 'default', linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']>, bypassExternalLinks = false }: ContentProps) {
+export function Content({
+  content,
+  parser,
+  parsers,
+  instance = 'default',
+  linksAs = 'a' as unknown as FC<JSX.IntrinsicElements['a']>,
+  bypassExternalLinks = false,
+  contentCssClasses = [],
+}: ContentProps) {
   const fixedContent = fixInvalidHtml(content);
 
   // Check if formatPermalinks is enabled (defaults to true)
@@ -57,5 +68,11 @@ export function Content({ content, parser, parsers, instance = 'default', linksA
     parser, // deprecated single parser last for backwards compat
   ];
 
-  return (<div data-rendered="">{parseHtml(fixedContent, ...allParsers)}</div>);
+  return (
+    <div data-rendered="">
+      <div className={clsx(...contentCssClasses)}>
+        {parseHtml(fixedContent, ...allParsers)}
+      </div>
+    </div>
+  );
 }

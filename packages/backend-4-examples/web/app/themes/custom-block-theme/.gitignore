@@ -1,0 +1,13 @@
+# Compiled CSS files
+style.css
+editor.css
+
+# Node modules
+node_modules/
+
+# Build artifacts
+*.map
+
+# OS files
+.DS_Store
+Thumbs.db

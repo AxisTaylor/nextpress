@@ -21,11 +21,11 @@ export interface WPHeadProps {
 export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance = 'default', pathname = '' }: WPHeadProps) {
   return (
     <>
-      {globalStyles && (
-        <GlobalStyles globalStyles={globalStyles} instance={instance} pathname={pathname} />
-      )}
       {stylesheets && stylesheets.length > 0 && (
         <Stylesheets stylesheets={stylesheets} instance={instance} pathname={pathname} />
+      )}
+      {globalStyles && (
+        <GlobalStyles globalStyles={globalStyles} instance={instance} pathname={pathname} />
       )}
       {importMap && importMap.length > 0 && (
         <ImportMap imports={importMap} instance={instance} pathname={pathname} />

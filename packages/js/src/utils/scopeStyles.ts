@@ -1,32 +1,52 @@
 const SCOPE_SELECTOR = '[data-rendered]';
 
 /**
- * Extracts :root blocks that contain only CSS custom property declarations
- * (--variable: value) and returns them separately from the rest of the CSS.
- * These variable blocks are safe to leave global since CSS variables only
- * take effect when referenced via var() inside a scoped rule.
+ * Returns true when every semicolon-separated declaration in the block
+ * is a CSS custom property (--name: value).
  */
-function extractRootVariables(css: string): { variables: string; rest: string } {
+function isVariablesOnly(content: string): boolean {
+  return content
+    .trim()
+    .split(';')
+    .filter((s: string) => s.trim().length > 0)
+    .every((decl: string) => decl.trim().startsWith('--'));
+}
+
+/**
+ * Extracts :root / :root,:host variable-only blocks from CSS and returns
+ * them separately so they can remain global (unscoped). CSS variables are
+ * inert until referenced via var() inside a scoped rule, so leaving them
+ * at :root is safe and necessary for cross-scope resolution.
+ *
+ * Handles both plain `:root { ... }` blocks and those nested inside
+ * `@layer` wrappers (e.g. Tailwind v4's `@layer theme { :root, :host { ... } }`).
+ * Extracted blocks preserve their original `@layer` wrapper so layer
+ * ordering is maintained.
+ */
+function extractCSSVariables(css: string): { variables: string; rest: string } {
   const variableBlocks: string[] = [];
 
-  // Match :root { ... } blocks where the content is only variable declarations.
-  // A variable-only block contains only lines matching --name: value;
-  const rest = css.replace(
-    /:root\s*\{([^}]+)\}/g,
-    (_match, content: string) => {
-      const trimmed = content.trim();
-      // Check if every declaration is a custom property
-      const isAllVariables = trimmed
-        .split(';')
-        .filter((s: string) => s.trim().length > 0)
-        .every((decl: string) => decl.trim().startsWith('--'));
-
-      if (isAllVariables) {
-        variableBlocks.push(`:root{${trimmed}}`);
+  // 1. Extract @layer blocks that contain ONLY :root/:host variable declarations.
+  //    Matches: @layer <name> { :root, :host { --vars } }
+  let rest = css.replace(
+    /@layer\s+([\w-]+)\s*\{(\s*(?::root|:host)[\s,]*(?::root|:host)*\s*\{([^}]+)\}\s*)\}/g,
+    (_match, layerName: string, _inner: string, content: string) => {
+      if (isVariablesOnly(content)) {
+        variableBlocks.push(`@layer ${layerName}{:root{${content.trim()}}}`);
         return '';
       }
+      return _match;
+    }
+  );
 
-      // Mixed block — keep it in place for scoping
+  // 2. Extract plain :root { ... } and :root, :host { ... } blocks at top level.
+  rest = rest.replace(
+    /(?::root|:host)[\s,]*(?::root|:host)*\s*\{([^}]+)\}/g,
+    (_match, content: string) => {
+      if (isVariablesOnly(content)) {
+        variableBlocks.push(`:root{${content.trim()}}`);
+        return '';
+      }
       return _match;
     }
   );
@@ -46,7 +66,7 @@ function extractRootVariables(css: string): { variables: string; rest: string } 
  * and wraps in @scope.
  */
 export function scopeStylesheet(css: string): string {
-  const { variables, rest } = extractRootVariables(css);
+  const { variables, rest } = extractCSSVariables(css);
 
   // Rewrite body, html, and :root selectors to & (scope root reference)
   // Handles: body, html, body.class, html[attr], :root :where(...), etc.
@@ -58,7 +78,7 @@ export function scopeStylesheet(css: string): string {
     )
     .replace(
       /:root/g,
-      '&'
+      ':scope'
     );
 
   const scoped = `@scope (${SCOPE_SELECTOR}) {\n${rewritten}\n}`;

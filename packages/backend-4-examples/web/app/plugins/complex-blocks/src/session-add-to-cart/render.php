@@ -51,7 +51,7 @@ wp_add_inline_script(
 	<p>Product: <strong data-testid="atc-product-name"><?php echo esc_html( $product_name ); ?></strong></p>
 	<button
 		data-testid="atc-button"
-		style="padding: 8px 16px; cursor: pointer;"
+		class="wp-element-button"
 	>
 		Add to Cart
 	</button>

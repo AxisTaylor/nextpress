@@ -10,6 +10,7 @@ keywords: "NextPress, multi-WordPress, multiple backends, microservices, multi-t
 NextPress supports connecting to multiple WordPress backends from a single Next.js application. This is useful for:
 
 - Microservices architecture (separate WordPress for blog, shop, docs)
+- Wordpress Multisites
 - Multi-tenant applications
 - Gradual migrations between WordPress instances
 

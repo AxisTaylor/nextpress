@@ -19,7 +19,7 @@ $context = wp_json_encode( [ 'count' => 0 ] );
 	<button
 		data-wp-on--click="actions.increment"
 		data-testid="counter-button"
-		style="padding: 8px 16px; cursor: pointer;"
+		class="wp-element-button"
 	>
 		<span data-testid="counter-label"><?php echo $label; ?>:</span>
 		<span data-wp-text="context.count" data-testid="counter-value">0</span>

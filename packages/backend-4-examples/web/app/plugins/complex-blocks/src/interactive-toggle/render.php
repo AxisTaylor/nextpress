@@ -15,7 +15,7 @@
 	<button
 		data-wp-on--click="actions.toggle"
 		data-testid="toggle-button"
-		style="padding: 8px 16px; cursor: pointer;"
+		class="wp-element-button"
 	>
 		<span data-wp-text="state.buttonLabel">Show content</span>
 	</button>

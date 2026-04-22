@@ -33,7 +33,8 @@
 	<button
 		data-wp-on--click="actions.submit"
 		data-testid="customer-note-submit"
-		style="padding: 8px 16px; margin-left: 8px; cursor: pointer;"
+		class="wp-element-button"
+		style="margin-left: 8px;"
 	>
 		Save
 	</button>
