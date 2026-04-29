@@ -28,24 +28,7 @@ Components and utilities for rendering WordPress content in Next.js:
 
 ### [NextPress WordPress Plugin](./packages/wordpress) - WordPress Plugin
 
-Add the GitHub repository to your `composer.json`:
-
-```json
-{
-  "repositories": [
-    {
-      "type": "git",
-      "url": "https://github.com/AxisTaylor/nextpress.git"
-    }
-  ]
-}
-```
-
-Then require the package:
-
-```bash
-composer require axistaylor/nextpress:dev-main
-```
+Download the latest `nextpress.zip` from the [Releases page](https://github.com/AxisTaylor/nextpress/releases) and install it via **Plugins > Add New > Upload Plugin** in your WordPress admin.
 
 Extends WPGraphQL with queries for enqueued scripts and stylesheets.
 
