@@ -62,7 +62,7 @@ export function Stylesheets({ stylesheets, instance = 'default', pathname: _path
         return (
           <Fragment key={handle}>
             {stylesheet.before && (
-              <Style id={`${handle}-before`} precedence="low" href={href || undefined}>
+              <Style id={`${handle}-before`} precedence="low" href={`${handle}-before-inline`}>
                 {scopeInlineStyles(stylesheet.before.join(''))}
               </Style>
             )}
@@ -70,7 +70,7 @@ export function Stylesheets({ stylesheets, instance = 'default', pathname: _path
               <Link rel="stylesheet" href={href} id={`${handle}-css`} precedence="medium" />
             )}
             {stylesheet.after && (
-              <Style id={`${handle}-inline-css`} precedence="high" href={href || undefined}>
+              <Style id={`${handle}-inline-css`} precedence="high" href={`${handle}-after-inline`}>
                 {scopeInlineStyles(stylesheet.after.join(''))}
               </Style>
             )}

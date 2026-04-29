@@ -44,5 +44,12 @@ function custom_block_theme_styles() {
 		wp_get_theme()->get( 'Version' )
 	);
 	wp_enqueue_style( 'custom-block-theme-style' );
+
+	// Add inline CSS after the theme stylesheet for e2e testing
+	// of inline style rendering in the headless frontend.
+	wp_add_inline_style(
+		'custom-block-theme-style',
+		'.nextpress-inline-test { --inline-test: passed; color: green; }'
+	);
 }
 add_action( 'wp_enqueue_scripts', 'custom_block_theme_styles' );
