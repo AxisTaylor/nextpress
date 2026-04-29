@@ -49,7 +49,7 @@ function custom_block_theme_styles() {
 	// of inline style rendering in the headless frontend.
 	wp_add_inline_style(
 		'custom-block-theme-style',
-		'.nextpress-inline-test { --inline-test: passed; color: green; }'
+		'.nextpress-inline-test { --inline-test: passed; color: green; } .is-layout-constrained { background-color: transparent; }'
 	);
 }
 add_action( 'wp_enqueue_scripts', 'custom_block_theme_styles' );
