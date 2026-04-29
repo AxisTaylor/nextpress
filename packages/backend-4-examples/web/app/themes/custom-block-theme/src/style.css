@@ -222,4 +222,8 @@
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
+
+  .is-layout-constrained {                                                                                  
+    background-color: red;                                                                                  
+  } 
 }

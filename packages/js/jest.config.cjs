@@ -27,6 +27,7 @@ module.exports = {
         jsx: 'react',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        ignoreDeprecations: "6.0",
       },
     }],
   },
@@ -50,6 +51,11 @@ module.exports = {
 
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+
+  // Allow Jest to transform ESM-only dependencies
+  transformIgnorePatterns: [
+    'node_modules/(?!(html-react-parser)/)',
+  ],
 
   // Ignore patterns
   testPathIgnorePatterns: [

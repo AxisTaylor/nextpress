@@ -44,13 +44,13 @@ export default async function WordPressLayout({
         />
       </head>
       <body className={inter.className}>
-        <Navbar />
-        <main className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
-          {children}
-        </main>
-        <WPFooter scripts={scripts} pathname={uri} />
-        <AssetUpdater fetchAssets={fetchAssets} />
-        <Footer />
+          <Navbar />
+          <main className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
+            {children}
+          </main>
+          <WPFooter scripts={scripts} pathname={uri} />
+          <AssetUpdater fetchAssets={fetchAssets} />
+          <Footer />
       </body>
     </html>
   );

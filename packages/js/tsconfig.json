@@ -10,7 +10,8 @@
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
       "allowSyntheticDefaultImports": true,
-      "baseUrl": ".",
+      "outDir": "./dist",
+      "rootDir": "./",
       "paths": {
         "@/*": ["./src/*"]
       },
