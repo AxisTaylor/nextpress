@@ -1,5 +1,11 @@
 # @axistaylor/nextpress-wordpress
 
+## 1.3.1
+
+### Patch Changes
+
+- [#43](https://github.com/AxisTaylor/nextpress/pull/43) [`0e6ad56`](https://github.com/AxisTaylor/nextpress/commit/0e6ad56bf2745fa031bb9dbe091b5b4b1b07dbf3) Thanks [@kidunot89](https://github.com/kidunot89)! - Remove the static `"version"` field from `packages/wordpress/composer.json`. Packagist derives the package version from the dist repo's git tag (`v<X.Y.Z>` mirrored from the source `wp-v<X.Y.Z>` tag), so a hard-coded `composer.json` version competes with — and on some Composer setups overrides — the tag-derived version. Letting the tag be the single source of truth fixes that.
+
 ## 1.3.0
 
 ### Minor Changes
