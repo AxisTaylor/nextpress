@@ -39,17 +39,20 @@ export function GlobalStyles({
   return (
     <Fragment>
       {/*
-        Register layer order before any layered content loads. wp-base is the
-        lowest tier (proxied .css files from assetsByUri — wp-block-library,
-        plugin/theme CSS files); wp-theme sits above (globalStyles +
-        customCss). Everything else stays unlayered and wins over both,
-        which is what we want for per-instance core-block-supports rules
-        and app-level CSS.
+        Register the wp-theme layer up front so theme.json globalStyles
+        live below every other source of WP CSS in the cascade. Proxied
+        .css (wp-block-library, plugin/theme CSS) stays unlayered so
+        author styles can still override theme.json defaults by normal
+        specificity + source order — wrapping proxied CSS in a layer was
+        too aggressive (a theme's button.is-style-cta would lose to
+        theme.json's generic button rule even at higher specificity).
+        Per-instance core-block-supports inline content also stays
+        unlayered so explicit block overrides still beat theme.json.
       */}
       <style
         id="nextpress-layer-order"
         data-nextpress="global"
-        dangerouslySetInnerHTML={{ __html: '@layer wp-base, wp-theme;' }}
+        dangerouslySetInnerHTML={{ __html: '@layer wp-theme;' }}
       />
       {fontFaceCss && (
         <style

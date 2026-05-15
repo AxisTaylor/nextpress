@@ -288,10 +288,10 @@ function updateGlobalStyles(
 
   const head = document.head;
 
-  // Re-register layer order on every navigation so the cascade priority of
-  // wp-base (proxied .css) and wp-theme (globalStyles) is preserved when
-  // the previous declaration was torn down with the rest of the global tags.
-  const layerOrder = createStyleElement('nextpress-layer-order', '@layer wp-base, wp-theme;');
+  // Re-register the wp-theme layer on every navigation so theme.json
+  // globalStyles stay below proxied CSS and unlayered author rules in
+  // the cascade after the previous declaration is torn down.
+  const layerOrder = createStyleElement('nextpress-layer-order', '@layer wp-theme;');
   layerOrder.setAttribute('data-nextpress', 'global');
   head.appendChild(layerOrder);
 
