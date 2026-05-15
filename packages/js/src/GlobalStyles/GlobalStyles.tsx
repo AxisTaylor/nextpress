@@ -38,6 +38,19 @@ export function GlobalStyles({
 
   return (
     <Fragment>
+      {/*
+        Register layer order before any layered content loads. wp-base is the
+        lowest tier (proxied .css files from assetsByUri — wp-block-library,
+        plugin/theme CSS files); wp-theme sits above (globalStyles +
+        customCss). Everything else stays unlayered and wins over both,
+        which is what we want for per-instance core-block-supports rules
+        and app-level CSS.
+      */}
+      <style
+        id="nextpress-layer-order"
+        data-nextpress="global"
+        dangerouslySetInnerHTML={{ __html: '@layer wp-base, wp-theme;' }}
+      />
       {fontFaceCss && (
         <style
           id="nextpress-font-faces"
@@ -50,7 +63,7 @@ export function GlobalStyles({
         <style
           id="nextpress-global-styles"
           data-nextpress="global"
-          dangerouslySetInnerHTML={{ __html: scopeInlineStyles(stylesheet) }}
+          dangerouslySetInnerHTML={{ __html: scopeInlineStyles(stylesheet, { layer: 'wp-theme' }) }}
           precedence="high"
         />
       )}
@@ -58,7 +71,7 @@ export function GlobalStyles({
         <style
           id="nextpress-custom-css"
           data-nextpress="global"
-          dangerouslySetInnerHTML={{ __html: scopeInlineStyles(customCss) }}
+          dangerouslySetInnerHTML={{ __html: scopeInlineStyles(customCss, { layer: 'wp-theme' }) }}
         />
       )}
     </Fragment>

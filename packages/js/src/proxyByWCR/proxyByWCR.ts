@@ -128,7 +128,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
       }
 
       const css = await response.text();
-      const scopedCss = scopeStylesheet(css);
+      const scopedCss = scopeStylesheet(css, { layer: 'wp-base' });
 
       return new NextResponse(scopedCss, {
         status: 200,
@@ -155,7 +155,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
       }
 
       const css = await response.text();
-      const scopedCss = scopeStylesheet(css);
+      const scopedCss = scopeStylesheet(css, { layer: 'wp-base' });
 
       return new NextResponse(scopedCss, {
         status: 200,
