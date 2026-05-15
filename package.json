@@ -49,11 +49,11 @@
     "nextjs",
     "wordpress-content"
   ],
-  "author": "Geoff Taylor <geoff@axistaylor.com>",
+  "author": "AxisTaylor, LLC <support@axistaylor.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/axistaylor/nextpress.git"
+    "url": "https://github.com/AxisTaylor/nextpress.git"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",

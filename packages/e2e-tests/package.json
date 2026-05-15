@@ -16,5 +16,5 @@
     "test:codegen": "playwright codegen http://localhost:3000",
     "report": "playwright show-report"
   },
-  "author": "Geoff Taylor <support@axistaylor.com>"
+  "author": "AxisTaylor, LLC <support@axistaylor.com>"
 }

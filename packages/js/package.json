@@ -89,7 +89,7 @@
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit"
   },
-  "author": "AxisTaylor <support@axistaylor.com>",
+  "author": "AxisTaylor, LLC <support@axistaylor.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
