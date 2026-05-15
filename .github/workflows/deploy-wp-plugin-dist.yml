@@ -1,0 +1,96 @@
+name: Deploy WordPress plugin to distribution repo
+
+# Mirror packages/wordpress/ into AxisTaylor/nextpress-wp-plugin-dist on every
+# WordPress plugin tag (`wp-v*`) the release workflow creates. Packagist
+# consumes the distribution repo so `composer require axistaylor/nextpress`
+# resolves to a tagged snapshot of the plugin (composer.json, vendor,
+# includes, and the plugin entrypoint), without the monorepo's tests, docs,
+# and tooling.
+
+on:
+  push:
+    tags:
+      - 'wp-v*'
+
+jobs:
+  deploy_plugin_dist:
+    name: Deploy to AxisTaylor/nextpress-wp-plugin-dist
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: Install runtime composer dependencies
+        working-directory: packages/wordpress
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Setup environment
+        run: |
+          set -eux
+          PLUGIN_DIR="$GITHUB_WORKSPACE/packages/wordpress"
+          SRC_DIR="$GITHUB_WORKSPACE/source"
+          DIST_DIR="$GITHUB_WORKSPACE/dist"
+          # The source-repo tag is `wp-vX.Y.Z`; the dist repo uses the bare
+          # `vX.Y.Z` form so Packagist parses the version cleanly.
+          SOURCE_TAG="${GITHUB_REF#refs/tags/}"
+          DIST_TAG="${SOURCE_TAG#wp-}"
+
+          echo "PLUGIN_DIR=$PLUGIN_DIR" >> $GITHUB_ENV
+          echo "SRC_DIR=$SRC_DIR" >> $GITHUB_ENV
+          echo "DIST_DIR=$DIST_DIR" >> $GITHUB_ENV
+          echo "SOURCE_TAG=$SOURCE_TAG" >> $GITHUB_ENV
+          echo "DIST_TAG=$DIST_TAG" >> $GITHUB_ENV
+
+      - name: Sync plugin files locally
+        run: |
+          set -eux
+          rm -rf "$SRC_DIR" "$DIST_DIR"
+          mkdir -p "$SRC_DIR"
+          rsync -av --exclude-from="$PLUGIN_DIR/.distignore" "$PLUGIN_DIR/" "$SRC_DIR/"
+        env:
+          PLUGIN_DIR: ${{ env.PLUGIN_DIR }}
+          SRC_DIR: ${{ env.SRC_DIR }}
+
+      - name: Setup SSH deploy key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.WP_PLUGIN_DIST_DEPLOY_KEY }}
+          known_hosts: github.com
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to distribution repo
+        run: |
+          set -eux
+
+          # Bare-style checkout: clone the dist repo's metadata into
+          # $DIST_DIR/.git, then set GIT_WORK_TREE to the staged source
+          # bundle. Git then commits whatever's in $SRC_DIR against the
+          # dist repo's index without copying files around. Mirrors the
+          # pattern xwp/stream uses to ship to xwp/stream-dist.
+          export GIT_DIR="$DIST_DIR/.git"
+
+          git clone --progress --verbose git@github.com:AxisTaylor/nextpress-wp-plugin-dist.git "$DIST_DIR/.git"
+          git checkout -B main
+
+          export GIT_WORK_TREE="$SRC_DIR"
+
+          git add --all
+          git commit --allow-empty --message "Release $DIST_TAG"
+
+          git tag --force "$DIST_TAG"
+          git push --force --tags origin main
+        env:
+          DIST_DIR: ${{ env.DIST_DIR }}
+          SRC_DIR: ${{ env.SRC_DIR }}
+          DIST_TAG: ${{ env.DIST_TAG }}

@@ -73,6 +73,72 @@ WordPress uses `:root` as a specificity bump in layout rules like:
 
 The `:root` selector gives this rule specificity 0,1,0, which it needs to override block-level `margin` shorthands. When scoping, NextPress rewrites `:root` to `:scope` (not `&`), which preserves the 0,1,0 specificity inside `@scope`.
 
+### Cascade Layers
+
+`@scope` isolates WordPress styles to `[data-rendered]`, but inside the scope NextPress still has to keep three classes of WP-derived CSS from fighting each other:
+
+1. **Proxied stylesheet files** from `assetsByUri` (`wp-block-library`, plugin/theme CSS files) — the lowest-priority foundation.
+2. **`globalStyles.stylesheet` + `customCss`** — the theme.json-derived design tokens that should override the foundation.
+3. **Inline `before`/`after` payloads** from `assetsByUri` (per-instance `core-block-supports` container rules, dynamic plugin styles) — per-page overrides that should win over both.
+
+To enforce that ordering NextPress declares two cascade layers near the top of the head:
+
+```css
+@layer wp-base, wp-theme;
+```
+
+…and routes each class of WP CSS into the appropriate tier:
+
+| Source | Path | Wrapping |
+|--------|------|----------|
+| Proxied `.css` files (any `assetsByUri` handle with a `src`) | `proxyByWCR.ts` | `@layer wp-base { @scope ([data-rendered]) { … } }` |
+| `globalStyles.stylesheet` + `customCss` | `GlobalStyles.tsx`, `AssetUpdater.updateGlobalStyles` | `@layer wp-theme { @scope ([data-rendered]) { … } }` |
+| `before` / `after` inline content on any `assetsByUri` handle | `Stylesheets.tsx`, `AssetUpdater.updateStylesheets` | `@scope ([data-rendered]) { … }` — unlayered |
+| App CSS (Tailwind, your `globals.css`) | n/a | unlayered |
+| Inline `style="…"` attributes | n/a | always wins |
+
+CSS Cascade Layers L5 says unlayered author rules beat any layered author rules, and later-declared layers beat earlier ones. So the resulting cascade priority is:
+
+```
+wp-base  <  wp-theme  <  unlayered (Stylesheets + app CSS)  <  inline style="…"
+```
+
+This makes per-instance block-supports CSS (e.g. an editor-set `style.spacing.blockGap` on a `core/columns` block) reliably override the matching theme.json default — even when both rules have the same selector specificity and the theme.json rule appears later in the document.
+
+#### Differentiation Is Source-Based, Never Handle-Based
+
+NextPress never branches on specific WP handle names (e.g. `core-block-supports`, `wp-block-library`). The layering only looks at *which payload field* a chunk of CSS came from — `globalStyles` field, `assetsByUri` external file, or `assetsByUri` inline `before`/`after`. Any WP setup that exposes those fields gets the correct cascade for free; classic themes, FSE block themes, plugin-only sites, and headless-first installs all work without nextpress needing to know what's installed.
+
+#### Nested `@layer` Inside Proxied Files
+
+A proxied `.css` file may already contain its own `@layer` rules (Tailwind v4 emits `@layer theme { … }`, plugin bundles may use `@layer base, components, utilities;`). When `scopeStylesheet(css, { layer: 'wp-base' })` wraps that file, the result is:
+
+```css
+@layer wp-base {
+  @scope ([data-rendered]) {
+    @layer theme { /* original file's layer */ }
+    .unlayered-rule { /* original file's unlayered rule */ }
+  }
+}
+```
+
+Per CSS Cascade L5, `@layer theme` becomes a sublayer named `wp-base.theme`. Two consequences:
+
+- Internal ordering within the file is preserved (relative `foo` vs `bar` order inside the file is kept as `wp-base.foo` vs `wp-base.bar`).
+- Anything that was unlayered in the original file becomes the implicit outer of `wp-base`, capping its maximum priority at the `wp-base` tier. A plugin that previously used unlayered CSS to override theme.json defaults loses that ability — that's intentional. Plugin CSS that genuinely needs to win against theme.json should be exposed as inline `before`/`after` (via `wp_add_inline_style()`), which stays unlayered.
+
+#### Variables Are Never Layered
+
+`:root` (or `:host`) blocks that contain only `--variable: value` declarations are extracted *before* the `@layer` wrap and emitted at the top level. CSS custom properties are inherited values resolved via the element's ancestor chain, not via the cascade between competing declarations — so they stay global so that `var()` references inside any layer (or outside any layer) resolve correctly.
+
+The extractor preserves a `:root` block's original `@layer` wrapper if it had one (e.g. Tailwind's `@layer theme { :root, :host { --vars } }`) so the file's internal layer registration order isn't lost.
+
+#### Why `global-styles` Is Skipped Server-Side
+
+WordPress's `wp_enqueue_global_styles()` adds `wp_get_global_stylesheet()` as inline-after content on the `global-styles` handle — duplicating the same content that NextPress already exposes through the dedicated `globalStyles.stylesheet` GraphQL field. If both reached the browser, the unlayered Stylesheets copy would beat the `@layer wp-theme` copy and per-instance overrides would never win.
+
+To prevent that, NextPress's WP plugin filters the `global-styles` handle out of the enqueued queue in `WP_Assets::flatten_enqueued_assets_list()`. The theme.json content still reaches the frontend via `globalStyles.stylesheet`; the unlayered duplicate just disappears.
+
 ## What You Need to Set Up
 
 ### 1. WordPress Block Theme
@@ -294,6 +360,18 @@ Buttons, links, or headings inside WordPress content lose their styling:
 A block's `margin` shorthand overrides the layout's `margin-block-start`:
 
 - NextPress rewrites `:root` to `:scope` inside `@scope` to preserve specificity. If you see layout spacing not working, check that `scopeStyles.ts` uses `:scope` (not `&`) for `:root` rewrites.
+
+### A theme.json default for a block isn't overriding `wp-block-library` defaults
+
+Theme.json output lives in `@layer wp-theme`; proxied `wp-block-library` CSS lives in `@layer wp-base`. wp-theme beats wp-base, so a theme.json `styles.blocks.<name>` rule should win — *unless* theme.json's emitted selector is less specific than the matching `wp-block-library` rule (e.g. `:scope :where(.X)` (0,1,0) vs `.wp-block-X.is-layout-flex` (0,2,0)). Increase the theme.json selector's specificity or override via a per-instance editor setting (which lands unlayered and wins regardless).
+
+### A per-instance block setting isn't winning over a theme.json default
+
+This is what cascade layers are for. If a `style.spacing.blockGap` (or padding/margin) set on a specific block in the editor isn't overriding the matching theme.json default:
+
+1. Check that `settings.spacing.blockGap` (or padding/margin) is `true` in theme.json — without that flag, the editor doesn't emit per-instance overrides at all.
+2. Confirm the per-instance rule appears in a `<style>` element WITHOUT an `@layer` wrapper. It should sit inside `@scope ([data-rendered]) { … }` but not inside any `@layer`. If it's accidentally inside `wp-theme`, the cascade won't bump it above the theme.json default.
+3. Verify `WP_Assets::flatten_enqueued_assets_list()` is still skipping the `global-styles` handle. If that filter is missing, the duplicate unlayered copy of theme.json reaches the browser and beats the per-instance override.
 
 ## Related
 

@@ -1,0 +1,24 @@
+# Files and directories excluded from the distribution build that ships
+# to AxisTaylor/nextpress-wp-plugin-dist. Anything listed here will NOT
+# be rsynced into the dist repo. The leading `/` anchors patterns to the
+# plugin root (packages/wordpress/).
+
+/bin
+/docker
+/local
+/plugin-build
+/tests
+/codeception.yml
+/composer.lock
+/docker-compose.yml
+/phpunit.xml
+/webpack.config.js
+/tsconfig.json
+/node_modules
+/.distignore
+/.git
+/.github
+/.gitignore
+/.editorconfig
+/.phpcs.xml
+/.phpunit.result.cache

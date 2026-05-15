@@ -182,7 +182,9 @@
 			"units": ["px", "em", "rem", "vh", "vw", "%"],
 			"padding": true,
 			"margin": true,
+			"blockGap": true,
 			"spacingSizes": [
+				{ "slug": "0", "size": "var(--spacing-0)", "name": "0px" },
 				{ "slug": "1", "size": "var(--spacing-1)", "name": "0.25rem" },
 				{ "slug": "2", "size": "var(--spacing-2)", "name": "0.5rem" },
 				{ "slug": "3", "size": "var(--spacing-3)", "name": "0.75rem" },
@@ -255,6 +257,15 @@
 			"core/paragraph": {
 				"color": {
 					"text": "var(--foreground)"
+				}
+			},
+			"core/columns": {
+				"spacing": {
+					"blockGap": "var(--spacing-12)",
+					"margin": {
+						"top": "var(--spacing-8)",
+						"bottom": "var(--spacing-8)"
+					}
 				}
 			},
 			"core/separator": {

@@ -288,6 +288,13 @@ function updateGlobalStyles(
 
   const head = document.head;
 
+  // Re-register layer order on every navigation so the cascade priority of
+  // wp-base (proxied .css) and wp-theme (globalStyles) is preserved when
+  // the previous declaration was torn down with the rest of the global tags.
+  const layerOrder = createStyleElement('nextpress-layer-order', '@layer wp-base, wp-theme;');
+  layerOrder.setAttribute('data-nextpress', 'global');
+  head.appendChild(layerOrder);
+
   if (globalStyles.renderedFontFaces) {
     const fontFaceCss = replaceProxyPlaceholders(
       globalStyles.renderedFontFaces
@@ -307,7 +314,7 @@ function updateGlobalStyles(
   if (globalStyles.stylesheet) {
     const el = createStyleElement(
       'nextpress-global-styles',
-      scopeInlineStyles(globalStyles.stylesheet),
+      scopeInlineStyles(globalStyles.stylesheet, { layer: 'wp-theme' }),
     );
     el.setAttribute('data-nextpress', 'global');
     head.appendChild(el);
@@ -316,7 +323,7 @@ function updateGlobalStyles(
   if (globalStyles.customCss) {
     const el = createStyleElement(
       'nextpress-custom-css',
-      scopeInlineStyles(globalStyles.customCss),
+      scopeInlineStyles(globalStyles.customCss, { layer: 'wp-theme' }),
     );
     el.setAttribute('data-nextpress', 'global');
     head.appendChild(el);

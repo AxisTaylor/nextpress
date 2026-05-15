@@ -57,15 +57,32 @@ function extractCSSVariables(css: string): { variables: string; rest: string } {
   };
 }
 
+export interface ScopeStylesheetOptions {
+  /**
+   * Optional cascade-layer name. When provided, the @scope block is
+   * wrapped in `@layer <name> { ... }` so the rules sit below any
+   * unlayered author CSS in the cascade.
+   *
+   * Use for foundational WP-derived CSS (proxied stylesheets, theme.json
+   * globalStyles) that per-instance block-supports CSS and app CSS need
+   * to override. Extracted `:root` variable blocks are NEVER layered —
+   * they stay top-level so var() references resolve via inheritance.
+   */
+  layer?: string;
+}
+
 /**
  * Scopes a stylesheet to only apply within [data-rendered] elements.
  *
  * Extracts :root variable-only blocks and emits them globally (CSS variables
  * are inert until referenced via var() so they're safe to leave unscoped).
  * Rewrites remaining body/html/:root selectors to the scope root reference (&)
- * and wraps in @scope.
+ * and wraps in @scope, optionally inside @layer.
  */
-export function scopeStylesheet(css: string): string {
+export function scopeStylesheet(
+  css: string,
+  options: ScopeStylesheetOptions = {},
+): string {
   const { variables, rest } = extractCSSVariables(css);
 
   // Rewrite body, html, and :root selectors to & (scope root reference)
@@ -81,7 +98,10 @@ export function scopeStylesheet(css: string): string {
       ':scope'
     );
 
-  const scoped = `@scope (${SCOPE_SELECTOR}) {\n${rewritten}\n}`;
+  const scopeBlock = `@scope (${SCOPE_SELECTOR}) {\n${rewritten}\n}`;
+  const scoped = options.layer
+    ? `@layer ${options.layer} {\n${scopeBlock}\n}`
+    : scopeBlock;
 
   if (variables) {
     return `${variables}\n${scoped}`;
@@ -93,6 +113,9 @@ export function scopeStylesheet(css: string): string {
 /**
  * Scopes inline CSS content for use in style tags.
  */
-export function scopeInlineStyles(css: string): string {
-  return scopeStylesheet(css);
+export function scopeInlineStyles(
+  css: string,
+  options: ScopeStylesheetOptions = {},
+): string {
+  return scopeStylesheet(css, options);
 }

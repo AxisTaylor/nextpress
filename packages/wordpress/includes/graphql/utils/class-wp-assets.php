@@ -28,6 +28,9 @@ class WP_Assets {
 		$registered_scripts = $wp_assets->registered;
 		$handles            = [];
 		foreach ( $queue as $handle ) {
+			if ( 'global-styles' === $handle ) {
+				continue;
+			}
 			if ( ! empty( $registered_scripts[ $handle ] ) ) {
 				/** @var \_WP_Dependency $script */
 				$script    = $registered_scripts[ $handle ];
