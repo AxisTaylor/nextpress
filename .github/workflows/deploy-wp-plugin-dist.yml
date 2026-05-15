@@ -21,11 +21,29 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           tools: composer:v2
+
+      # Install at the repo root so the WP plugin's webpack bundle build can
+      # resolve devDependencies via the monorepo's hoisted node_modules.
+      - name: Install npm dependencies
+        run: npm ci
+
+      # Build the editor/runtime bundles webpack writes into the plugin's
+      # build/ output. Without this step the dist repo ships sources only and
+      # the plugin breaks on install.
+      - name: Build WordPress plugin bundles
+        working-directory: packages/wordpress
+        run: npm run build
 
       - name: Install runtime composer dependencies
         working-directory: packages/wordpress

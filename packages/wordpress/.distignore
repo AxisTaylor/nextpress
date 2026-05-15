@@ -8,6 +8,7 @@
 /local
 /plugin-build
 /tests
+/assets/src
 /codeception.yml
 /composer.lock
 /docker-compose.yml
@@ -15,6 +16,8 @@
 /webpack.config.js
 /tsconfig.json
 /node_modules
+/package.json
+/package-lock.json
 /.distignore
 /.git
 /.github
