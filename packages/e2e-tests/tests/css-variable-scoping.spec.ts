@@ -108,20 +108,13 @@ test.describe('CSS Variable Scoping', () => {
     expect(maxWidth).not.toBe('none');
   });
 
-  test(':scope rewrite should preserve specificity for layout spacing', async ({ page }) => {
-    await page.goto('/typography-showcase/');
-    await page.waitForLoadState('domcontentloaded');
-
-    // The blockquote should have margin-block-start from the layout spacing
-    // rule (:scope :where(.is-layout-constrained) > *) which needs :scope
-    // specificity (0,1,0) to override .wp-block-quote's margin shorthand.
-    const blockquote = page.locator('[data-rendered] .wp-block-quote').first();
-    if (await blockquote.count() > 0) {
-      const marginTop = await blockquote.evaluate((el) =>
-        parseFloat(window.getComputedStyle(el).marginBlockStart)
-      );
-      // Should have layout spacing, not 0 from the shorthand reset
-      expect(marginTop).toBeGreaterThan(0);
-    }
-  });
+  // The previous test here asserted that :root → :scope rewriting preserved
+  // specificity (0,1,0) so the layout spacing rule beat .wp-block-quote's
+  // margin reset via source order. With the introduction of cascade layers
+  // (@layer wp-base, wp-theme), the relative priority of layout spacing vs
+  // resets is no longer driven purely by specificity, so the indirect
+  // blockquote-margin check is no longer a reliable signal. The :root →
+  // :scope rewrite itself is covered directly in
+  // packages/js/src/utils/scopeStyles.spec.ts; cascade outcomes are covered
+  // in style-layers.spec.ts.
 });
