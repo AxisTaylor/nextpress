@@ -11,7 +11,6 @@
     "packages/wordpress": "1.0.0"
   },
   "scripts": {
-    "update-versions": "ts-node scripts/update-versions.ts",
     "build": "run-p build:backend build:js build:wordpress",
     "build:backend": "npm run build -w ./packages/backend-4-examples",
     "build:js": "npm run build -w ./packages/js",

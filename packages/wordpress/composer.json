@@ -1,6 +1,5 @@
 {
     "name": "axistaylor/nextpress",
-    "version": "1.0.0",
     "description": "Render WordPress Gutenberg content 1:1 in Next.js. Extends WPGraphQL with enqueued asset queries for headless WordPress implementations.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
