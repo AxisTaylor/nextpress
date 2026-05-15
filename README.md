@@ -28,9 +28,13 @@ Components and utilities for rendering WordPress content in Next.js:
 
 ### [NextPress WordPress Plugin](./packages/wordpress) - WordPress Plugin
 
-Download the latest `nextpress.zip` from the [Releases page](https://github.com/AxisTaylor/nextpress/releases) and install it via **Plugins > Add New > Upload Plugin** in your WordPress admin.
+```bash
+composer require axistaylor/nextpress
+```
 
-Extends WPGraphQL with queries for enqueued scripts and stylesheets.
+Published on [Packagist](https://packagist.org/packages/axistaylor/nextpress) as a `wordpress-plugin` type, so Composer-managed WordPress installs (Bedrock or any setup with `composer/installers`) drop it into `wp-content/plugins/nextpress/` automatically. For non-Composer sites, download `nextpress.zip` from the [Releases page](https://github.com/AxisTaylor/nextpress/releases?q=wp-v) and upload it via **Plugins → Add New → Upload Plugin**. Full install options in the [WordPress Plugin docs](./docs/wordpress-plugin.md#installation).
+
+Extends WPGraphQL with `assetsByUri`, `globalStyles`, and `templateByUri` queries for headless Next.js frontends.
 
 ## Documentation
 
