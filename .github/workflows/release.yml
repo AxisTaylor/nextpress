@@ -215,17 +215,24 @@ jobs:
         run: |
           set -eux
 
-          # Bare-style checkout: clone the dist repo's metadata into
-          # $DIST_DIR/.git, then set GIT_WORK_TREE to the staged source
-          # bundle. Git commits whatever's in $SRC_DIR against the dist
-          # repo's index without copying files around. Mirrors the
-          # pattern xwp/stream uses to ship to xwp/stream-dist.
-          export GIT_DIR="$DIST_DIR/.git"
+          # Plain clone: the dist repo lands at $DIST_DIR with its
+          # metadata at $DIST_DIR/.git in the normal layout. The earlier
+          # GIT_DIR/GIT_WORK_TREE-split pattern (cloning into
+          # $DIST_DIR/.git directly) put metadata at $DIST_DIR/.git/.git
+          # so subsequent git commands looking at GIT_DIR=$DIST_DIR/.git
+          # errored with "fatal: not a git repository".
+          git clone --progress --verbose git@github.com:AxisTaylor/nextpress-wp-plugin-dist.git "$DIST_DIR"
+          cd "$DIST_DIR"
 
-          git clone --progress --verbose git@github.com:AxisTaylor/nextpress-wp-plugin-dist.git "$DIST_DIR/.git"
+          # Make sure main exists locally — branch is unborn on a freshly
+          # bootstrapped dist repo until the first push.
           git checkout -B main
 
-          export GIT_WORK_TREE="$SRC_DIR"
+          # Sync the staged source bundle into the dist working tree,
+          # deleting anything the bundle no longer includes (so removed
+          # files actually disappear from the dist repo). --exclude=.git
+          # protects the cloned metadata directory.
+          rsync -av --delete --exclude='.git' "$SRC_DIR/" ./
 
           git add --all
           git commit --allow-empty --message "Release $DIST_TAG"
