@@ -11,9 +11,9 @@
     "woocommerce",
     "react"
   ],
-  "homepage": "https://github.com/axistaylor/nextpress",
+  "homepage": "https://github.com/AxisTaylor/nextpress",
   "bugs": {
-    "url": "https://github.com/axistaylor/nextpress/issues"
+    "url": "https://github.com/AxisTaylor/nextpress/issues"
   },
   "publishConfig": {
     "access": "public"
@@ -89,10 +89,10 @@
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit"
   },
-  "author": "AxisTaylor <support@axistaylor.com>",
+  "author": "AxisTaylor, LLC <support@axistaylor.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/axistaylor/nextpress.git"
+    "url": "https://github.com/AxisTaylor/nextpress.git"
   }
 }
