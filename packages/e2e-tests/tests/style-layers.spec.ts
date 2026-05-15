@@ -3,19 +3,21 @@ import { test, expect } from '@playwright/test';
 /**
  * Style Layer Tests
  *
- * Validates that NextPress wraps WP-derived CSS in cascade layers so the
- * cascade priority is:
+ * Validates that NextPress wraps theme.json's globalStyles in
+ * `@layer wp-theme` so per-instance block-supports CSS (and any other
+ * unlayered author CSS) reliably override theme.json defaults.
  *
- *   wp-base (proxied .css from assetsByUri)
- *   < wp-theme (globalStyles.stylesheet + customCss)
- *   < unlayered (Stylesheets before/after inline content from assetsByUri,
- *     app CSS)
- *   < inline style="..."
+ *   wp-theme (globalStyles.stylesheet + customCss) — lowest priority
+ *   < unlayered (proxied .css from assetsByUri, Stylesheets before/after
+ *     inline content, app CSS) — beats wp-theme by being unlayered
+ *   < inline style="..." — always wins
  *
- * This makes per-instance block-supports CSS (e.g. blockGap explicitly set
- * to 0 on a core/columns block) reliably win over theme.json defaults,
- * even when theme.json output appears later in the document via duplicate
- * style emissions.
+ * Proxied .css files (wp-block-library, plugin/theme CSS) intentionally
+ * stay unlayered so author styles can still override theme.json defaults
+ * via normal specificity + source order — wrapping them in a layer was
+ * too aggressive (e.g. a theme's `.is-style-cta .wp-block-button__link`
+ * rule would lose to theme.json's generic `.wp-element-button` rule even
+ * at higher specificity).
  *
  * Seeded pages (live in the dev backup SQL dump):
  * - /test-layer-zero-blockgap — columns block with style.spacing.blockGap
@@ -32,22 +34,18 @@ test.describe('Style Cascade Layers — Structure', () => {
     await page.waitForLoadState('domcontentloaded');
   });
 
-  test('@layer wp-base, wp-theme is declared before any layered content', async ({ page }) => {
+  test('@layer wp-theme is declared before any layered content', async ({ page }) => {
     const layerOrder = await page.locator('#nextpress-layer-order').textContent();
-    expect(layerOrder).toContain('@layer wp-base, wp-theme;');
+    expect(layerOrder).toContain('@layer wp-theme;');
 
-    // Layer order must come before any @layer wp-base { ... } or
-    // @layer wp-theme { ... } content. Otherwise the order is determined
-    // by first-encounter and we lose the guarantee.
+    // Layer order must come before any @layer wp-theme { ... } content,
+    // otherwise the order is determined by first-encounter and we lose
+    // the guarantee that wp-theme registers as the lowest layer.
     const html = await page.content();
-    const orderDeclIdx = html.indexOf('@layer wp-base, wp-theme;');
-    const firstLayerBaseIdx = html.indexOf('@layer wp-base {');
+    const orderDeclIdx = html.indexOf('@layer wp-theme;');
     const firstLayerThemeIdx = html.indexOf('@layer wp-theme {');
 
     expect(orderDeclIdx).toBeGreaterThan(-1);
-    if (firstLayerBaseIdx !== -1) {
-      expect(orderDeclIdx).toBeLessThan(firstLayerBaseIdx);
-    }
     if (firstLayerThemeIdx !== -1) {
       expect(orderDeclIdx).toBeLessThan(firstLayerThemeIdx);
     }
@@ -66,7 +64,7 @@ test.describe('Style Cascade Layers — Structure', () => {
     );
   });
 
-  test('proxied .css files come back wrapped in @layer wp-base', async ({ page }) => {
+  test('proxied .css files stay unlayered (only @scope-wrapped)', async ({ page }) => {
     const proxiedCssBodies: string[] = [];
 
     page.on('response', async (response) => {
@@ -86,8 +84,11 @@ test.describe('Style Cascade Layers — Structure', () => {
 
     expect(proxiedCssBodies.length).toBeGreaterThan(0);
     for (const body of proxiedCssBodies) {
-      expect(body).toContain('@layer wp-base {');
       expect(body).toContain('@scope ([data-rendered]) {');
+      // Proxied CSS must stay unlayered so author styles override
+      // theme.json defaults via normal specificity + source order.
+      expect(body).not.toContain('@layer wp-base');
+      expect(body).not.toContain('@layer wp-theme');
     }
   });
 
@@ -120,7 +121,7 @@ test.describe('Style Cascade Layers — Structure', () => {
 });
 
 test.describe('Style Cascade Layers — Behavior', () => {
-  test('columns with explicit blockGap=0 win over theme.json default (48px)', async ({ page }) => {
+  test('columns with explicit blockGap=0 win over theme.json default', async ({ page }) => {
     await page.goto('/test-layer-zero-blockgap');
     await page.waitForLoadState('domcontentloaded');
 
@@ -189,39 +190,5 @@ test.describe('Style Cascade Layers — Behavior', () => {
 
     expect(result.layeredOnly).toBe('rgb(255, 0, 0)');
     expect(result.afterUnlayered).toBe('rgb(0, 0, 255)');
-  });
-
-  test('wp-theme layered rules beat wp-base layered rules', async ({ page }) => {
-    await page.goto('/test-layer-default-blockgap');
-    await page.waitForLoadState('domcontentloaded');
-
-    const result = await page.evaluate(() => {
-      const target = document.createElement('div');
-      target.id = 'nextpress-cascade-probe';
-      const scope = document.querySelector('[data-rendered]');
-      (scope || document.body).appendChild(target);
-
-      const base = document.createElement('style');
-      base.textContent =
-        '@layer wp-base { @scope ([data-rendered]) { #nextpress-cascade-probe { color: rgb(0, 128, 0); } } }';
-      document.head.appendChild(base);
-      const baseOnly = getComputedStyle(target).color;
-
-      const theme = document.createElement('style');
-      theme.textContent =
-        '@layer wp-theme { @scope ([data-rendered]) { #nextpress-cascade-probe { color: rgb(128, 0, 128); } } }';
-      document.head.appendChild(theme);
-      const afterTheme = getComputedStyle(target).color;
-
-      base.remove();
-      theme.remove();
-      target.remove();
-      return { baseOnly, afterTheme };
-    });
-
-    expect(result.baseOnly).toBe('rgb(0, 128, 0)');
-    // wp-theme wins because it was declared after wp-base in the layer-order
-    // statement (@layer wp-base, wp-theme).
-    expect(result.afterTheme).toBe('rgb(128, 0, 128)');
   });
 });
