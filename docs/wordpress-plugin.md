@@ -17,32 +17,49 @@ The NextPress WordPress plugin extends WPGraphQL to expose enqueued scripts and 
 
 ## Installation
 
-### Via Composer
+### Via Composer (recommended)
 
-Add the GitHub repository to your `composer.json`:
+The plugin is published on [Packagist as `axistaylor/nextpress`](https://packagist.org/packages/axistaylor/nextpress) and registered as a `wordpress-plugin` type, so Composer-managed WordPress sites (Bedrock, [johnpbloch/wordpress](https://github.com/johnpbloch/wordpress), or any setup that has [`composer/installers`](https://packagist.org/packages/composer/installers) configured) will land it in `wp-content/plugins/nextpress/` automatically:
+
+```bash
+composer require axistaylor/nextpress
+```
+
+To pin to a specific version range:
+
+```bash
+composer require axistaylor/nextpress:^1.2
+```
+
+If your site doesn't already have `composer/installers` set up, add it alongside the plugin and tell Composer where `wordpress-plugin` packages belong:
 
 ```json
 {
-  "repositories": [
-    {
-      "type": "git",
-      "url": "https://github.com/AxisTaylor/nextpress.git"
+  "require": {
+    "axistaylor/nextpress": "^1.2",
+    "composer/installers": "^2.0"
+  },
+  "extra": {
+    "installer-paths": {
+      "wp-content/plugins/{$name}/": ["type:wordpress-plugin"]
     }
-  ]
+  }
 }
 ```
 
-Then require the package:
+Then activate the plugin:
 
 ```bash
-composer require axistaylor/nextpress:dev-main
+wp plugin activate nextpress
 ```
 
-### Manual Installation
+Packagist serves tagged snapshots from the [dedicated distribution repository](https://github.com/AxisTaylor/nextpress-wp-plugin-dist) that NextPress's release workflow mirrors into on every `wp-v*` tag — only the runtime plugin code (compiled `assets/dist/`, PHP sources, `vendor/`, and `composer.json`), without the monorepo's tests, docs, or tooling.
 
-1. Download the plugin from GitHub releases
-2. Upload to `/wp-content/plugins/nextpress/`
-3. Activate in WordPress admin
+### Manual installation
+
+1. Download the latest `nextpress.zip` from the [Releases page](https://github.com/AxisTaylor/nextpress/releases?q=wp-v).
+2. Upload it via **Plugins → Add New → Upload Plugin** in your WordPress admin, or extract into `/wp-content/plugins/nextpress/` directly.
+3. Activate the plugin.
 
 ## GraphQL Schema
 
