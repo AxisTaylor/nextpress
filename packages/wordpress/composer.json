@@ -45,7 +45,7 @@
     },
     "scripts": {
         "install-test-env": "bash bin/install-test-env.sh",
-        "test": "vendor/bin/codecept run Integration --debug",
+        "test": "vendor/bin/codecept run Integration",
         "test:integration": "vendor/bin/codecept run Integration",
         "codecept": "vendor/bin/codecept"
     },
