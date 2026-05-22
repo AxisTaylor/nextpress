@@ -15,7 +15,7 @@ class WP_Assets {
 	 *
 	 * When $check_script_modules is true, handles that aren't found in
 	 * the classic $wp_assets registry are looked up in the WP Script
-	 * Modules registry (via NextPress_Script_Modules::get_registered())
+	 * Modules registry (via NextPress_Script_Modules::get_registered_modules())
 	 * and their module-level dependencies are walked recursively.
 	 *
 	 * @param array<string, string> $queue                List of asset handles for a given content node.
@@ -58,7 +58,7 @@ class WP_Assets {
 			}
 
 			// Check if it's in the script modules registry.
-			$all_modules = class_exists( NextPress_Script_Modules::class ) ? NextPress_Script_Modules::get_registered() : [];
+			$all_modules = class_exists( NextPress_Script_Modules::class ) ? NextPress_Script_Modules::get_registered_modules() : [];
 			if ( isset( $all_modules[ $handle ] ) ) {
 				$module_data = $all_modules[ $handle ];
 				$handles[]   = $handle;
@@ -125,7 +125,7 @@ class WP_Assets {
 			return;
 		}
 
-		$registered = NextPress_Script_Modules::get_registered();
+		$registered = NextPress_Script_Modules::get_registered_modules();
 		$queue      = method_exists( wp_script_modules(), 'get_queue' )
 			? wp_script_modules()->get_queue()
 			: array_keys( array_filter( $registered, static function ( $entry ) {

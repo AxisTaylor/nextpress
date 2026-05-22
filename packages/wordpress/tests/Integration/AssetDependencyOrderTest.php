@@ -109,7 +109,7 @@ class AssetDependencyOrderTest extends NextPressTestCase
             'query'     => '
                 query GetAssetsByUri($uri: String!) {
                     assetsByUri(uri: $uri) {
-                        enqueuedStylesheets {
+                        enqueuedStylesheets(first: 100) {
                             nodes {
                                 handle
                             }
