@@ -60,11 +60,44 @@ describe('scopeStylesheet', () => {
   it('preserves @layer-wrapped :root variable blocks (Tailwind v4 pattern)', () => {
     const css = '@layer theme { :root, :host { --tw-color: red; } } .x { color: var(--tw-color); }';
     const out = scopeStylesheet(css);
-    // Tailwind's theme layer variables stay unscoped
-    expect(out).toContain('@layer theme{:root{--tw-color: red;}}');
+    // Tailwind's theme layer variables stay unscoped — original selector preserved.
+    expect(out).toContain('@layer theme{:root, :host{--tw-color: red;}}');
     // App rules still get scoped
     expect(out).toContain('@scope ([data-rendered]) {');
     expect(out).toContain('.x { color: var(--tw-color); }');
+  });
+
+  it('keeps :root.dark { --vars } blocks unscoped with their original selector', () => {
+    // Regression: previously `:root.dark` was rewritten to `:scope.dark` inside
+    // the @scope wrapper, where it could never match because `.dark` lives on
+    // <html>, not on the [data-rendered] scope element. The light :root { … }
+    // block extracted fine, so dark-mode token swaps were lost.
+    const css = ':root { --bg: white; } :root.dark { --bg: black; } .x { background: var(--bg); }';
+    const out = scopeStylesheet(css);
+    expect(out).toContain(':root{--bg: white;}');
+    expect(out).toContain(':root.dark{--bg: black;}');
+    // Neither :root block should reappear inside the @scope rewrite.
+    const scopeStart = out.indexOf('@scope (');
+    expect(out.indexOf(':root', scopeStart)).toBe(-1);
+    expect(out.indexOf(':scope.dark')).toBe(-1);
+    // Non-root rule still scoped.
+    expect(out).toContain('.x { background: var(--bg); }');
+  });
+
+  it('extracts :root[data-theme="x"] and :root:where(.dark) variable blocks unscoped', () => {
+    const css = ':root[data-theme="dark"] { --bg: black; } :root:where(.dark) { --fg: white; }';
+    const out = scopeStylesheet(css);
+    expect(out).toContain(':root[data-theme="dark"]{--bg: black;}');
+    expect(out).toContain(':root:where(.dark){--fg: white;}');
+  });
+
+  it('does NOT extract :root with descendant combinators (those are real descendant rules)', () => {
+    // `:root .foo` is a descendant selector — not a root variable block.
+    // It must NOT be extracted; the `.foo` part is a real scoped match.
+    const css = ':root .foo { --bg: red; }';
+    const out = scopeStylesheet(css);
+    // Should land inside @scope, with :root rewritten to :scope.
+    expect(out).toContain(':scope .foo { --bg: red; }');
   });
 });
 

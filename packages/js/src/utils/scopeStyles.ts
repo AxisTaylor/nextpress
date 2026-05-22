@@ -12,44 +12,62 @@ function isVariablesOnly(content: string): boolean {
     .every((decl: string) => decl.trim().startsWith('--'));
 }
 
+// `:root` or `:host`, optionally chained with attached modifiers — class
+// (`.dark`), id, attribute, or pseudo (`:where(...)`, `:not(.x)`). Crucially
+// excludes descendant / child / sibling combinators (space, >, +, ~) so we
+// only catch selector chains that still target the document root.
+//
+// Examples that match:  :root  :host  :root.dark  :root[data-theme="x"]
+//                       :root:where(.dark)  :root, :host
+// Examples that don't:  :root .foo   :root > .bar
+const ROOT_PIECE = `(?::root|:host)(?:\\.[\\w-]+|\\[[^\\]]*\\]|#[\\w-]+|:[\\w-]+(?:\\([^)]*\\))?)*`;
+const ROOT_SELECTOR_LIST = `(?:${ROOT_PIECE}\\s*(?:,\\s*${ROOT_PIECE}\\s*)*)`;
+
 /**
- * Extracts :root / :root,:host variable-only blocks from CSS and returns
- * them separately so they can remain global (unscoped). CSS variables are
- * inert until referenced via var() inside a scoped rule, so leaving them
- * at :root is safe and necessary for cross-scope resolution.
+ * Extracts :root / :host variable-only blocks from CSS and returns them
+ * separately so they can remain global (unscoped). CSS variables are inert
+ * until referenced via var() inside a scoped rule, so leaving them at root
+ * level is safe — and necessary for the cascade to resolve correctly across
+ * scope boundaries (e.g. `:root.dark` token swaps for dark mode).
  *
- * Handles both plain `:root { ... }` blocks and those nested inside
- * `@layer` wrappers (e.g. Tailwind v4's `@layer theme { :root, :host { ... } }`).
- * Extracted blocks preserve their original `@layer` wrapper so layer
- * ordering is maintained.
+ * Handles:
+ *   - Plain :root { --vars }
+ *   - :root, :host { --vars }
+ *   - :root.dark { --vars }, :root[data-theme="x"] { --vars }, :root:where(.dark) { --vars }
+ *   - @layer name { :root, :host { --vars } }  (Tailwind v4 pattern)
+ *
+ * The original selector chain is preserved on the extracted rule so
+ * variants like `:root.dark` still match when the relevant class is
+ * applied to the document root. Previously only the plain `:root` selector
+ * was preserved — `:root.dark` blocks fell through to the scope rewrite
+ * and never matched at runtime (`.dark` lives on <html>, not on the
+ * `[data-rendered]` scope element).
  */
 function extractCSSVariables(css: string): { variables: string; rest: string } {
   const variableBlocks: string[] = [];
 
   // 1. Extract @layer blocks that contain ONLY :root/:host variable declarations.
-  //    Matches: @layer <name> { :root, :host { --vars } }
-  let rest = css.replace(
-    /@layer\s+([\w-]+)\s*\{(\s*(?::root|:host)[\s,]*(?::root|:host)*\s*\{([^}]+)\}\s*)\}/g,
-    (_match, layerName: string, _inner: string, content: string) => {
-      if (isVariablesOnly(content)) {
-        variableBlocks.push(`@layer ${layerName}{:root{${content.trim()}}}`);
-        return '';
-      }
-      return _match;
-    }
+  const layerRe = new RegExp(
+    `@layer\\s+([\\w-]+)\\s*\\{\\s*(${ROOT_SELECTOR_LIST})\\s*\\{([^}]+)\\}\\s*\\}`,
+    'g',
   );
+  let rest = css.replace(layerRe, (_match, layerName: string, selector: string, content: string) => {
+    if (isVariablesOnly(content)) {
+      variableBlocks.push(`@layer ${layerName}{${selector.trim()}{${content.trim()}}}`);
+      return '';
+    }
+    return _match;
+  });
 
-  // 2. Extract plain :root { ... } and :root, :host { ... } blocks at top level.
-  rest = rest.replace(
-    /(?::root|:host)[\s,]*(?::root|:host)*\s*\{([^}]+)\}/g,
-    (_match, content: string) => {
-      if (isVariablesOnly(content)) {
-        variableBlocks.push(`:root{${content.trim()}}`);
-        return '';
-      }
-      return _match;
+  // 2. Extract top-level :root[…] { … } / :root, :host { … } blocks.
+  const rootRe = new RegExp(`(${ROOT_SELECTOR_LIST})\\s*\\{([^}]+)\\}`, 'g');
+  rest = rest.replace(rootRe, (_match, selector: string, content: string) => {
+    if (isVariablesOnly(content)) {
+      variableBlocks.push(`${selector.trim()}{${content.trim()}}`);
+      return '';
     }
-  );
+    return _match;
+  });
 
   return {
     variables: variableBlocks.join('\n'),
