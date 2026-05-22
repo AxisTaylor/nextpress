@@ -133,9 +133,10 @@ class AssetDependencyOrderTest extends NextPressTestCase
         $topPos = array_search('test-top-style', $handles);
 
         // All stylesheets should be present
-        $this->assertNotFalse($basePos, 'Base stylesheet should be in the list');
-        $this->assertNotFalse($middlePos, 'Middle stylesheet should be in the list');
-        $this->assertNotFalse($topPos, 'Top stylesheet should be in the list');
+        $debug = 'Handles in result: ' . implode(',', $handles);
+        $this->assertNotFalse($basePos, 'Base stylesheet should be in the list. ' . $debug);
+        $this->assertNotFalse($middlePos, 'Middle stylesheet should be in the list. ' . $debug);
+        $this->assertNotFalse($topPos, 'Top stylesheet should be in the list. ' . $debug);
 
         // Dependencies should come before dependents
         $this->assertLessThan($middlePos, $basePos, 'Base stylesheet should come before middle stylesheet');
