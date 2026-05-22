@@ -1,5 +1,5 @@
 ---
-"@axistaylor/nextpress": patch
+"@axistaylor/nextpress-wordpress": patch
 ---
 
 `NextPress_Script_Modules extends \WP_Script_Modules` was redeclaring `get_registered()` as a `static` method. WP 6.7 shipped a non-static public `WP_Script_Modules::get_registered()`, and PHP refuses to change a method's static-ness in a subclass — the plugin fatals on load with "Cannot make non static method WP_Script_Modules::get_registered() static …", taking the plugin (and the e2e suite) down before anything could boot.
