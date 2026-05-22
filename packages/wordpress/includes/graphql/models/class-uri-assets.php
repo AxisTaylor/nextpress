@@ -305,8 +305,23 @@ class Uri_Assets extends Model {
 			'enqueuedStylesheetsQueue' => function () {
 				global $wp_styles;
 
+				if ( function_exists( '\codecept_debug' ) ) {
+					\codecept_debug( 'STYLES_QUEUE_BEFORE_SIMULATE: ' . implode( ',', $wp_styles->queue ?? [] ) );
+					\codecept_debug( 'STYLES_REGISTERED_BEFORE: ' . implode( ',', array_keys( $wp_styles->registered ?? [] ) ) );
+				}
+
 				$this->simulate_render();
+
+				if ( function_exists( '\codecept_debug' ) ) {
+					\codecept_debug( 'STYLES_QUEUE_AFTER_SIMULATE: ' . implode( ',', $wp_styles->queue ?? [] ) );
+					\codecept_debug( 'STYLES_DONE_AFTER_SIMULATE: ' . implode( ',', $wp_styles->done ?? [] ) );
+				}
+
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );
+
+				if ( function_exists( '\codecept_debug' ) ) {
+					\codecept_debug( 'FLATTEN_RESULT: ' . implode( ',', $queue ) );
+				}
 
 				$wp_styles->reset();
 				$wp_styles->queue = [];
