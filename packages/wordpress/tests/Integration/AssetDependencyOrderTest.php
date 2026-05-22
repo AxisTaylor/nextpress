@@ -133,7 +133,16 @@ class AssetDependencyOrderTest extends NextPressTestCase
         $topPos = array_search('test-top-style', $handles);
 
         // All stylesheets should be present
-        $debug = 'Handles in result: ' . implode(',', $handles);
+        global $wp_styles;
+        $debug = sprintf(
+            "Handles in result: %s | wp_styles->queue: %s | wp_styles->registered has top? %s | middle? %s | base? %s | done has top? %s",
+            implode(',', $handles),
+            implode(',', $wp_styles->queue ?? []),
+            isset($wp_styles->registered['test-top-style']) ? 'YES' : 'NO',
+            isset($wp_styles->registered['test-middle-style']) ? 'YES' : 'NO',
+            isset($wp_styles->registered['test-base-style']) ? 'YES' : 'NO',
+            in_array('test-top-style', $wp_styles->done ?? [], true) ? 'YES' : 'NO'
+        );
         $this->assertNotFalse($basePos, 'Base stylesheet should be in the list. ' . $debug);
         $this->assertNotFalse($middlePos, 'Middle stylesheet should be in the list. ' . $debug);
         $this->assertNotFalse($topPos, 'Top stylesheet should be in the list. ' . $debug);
