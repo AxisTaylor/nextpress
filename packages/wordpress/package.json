@@ -1,6 +1,6 @@
 {
   "name": "@axistaylor/nextpress-wordpress",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "private": true,
   "description": "A WPGraphQL extension. Adds the queries needed to render WP content on a 1:1 scale in a headless environment.",
   "author": "AxisTaylor, LLC <support@axistaylor.com>",
