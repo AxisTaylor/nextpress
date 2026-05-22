@@ -302,8 +302,16 @@ class Uri_Assets extends Model {
 			'enqueuedStylesheetsQueue' => function () {
 				global $wp_styles;
 
+				if ( function_exists( '\codecept_debug' ) ) {
+					\codecept_debug( 'STYLES_RESOLVER_CALLED queue: ' . implode( ',', $wp_styles->queue ?? [] ) );
+				}
+
 				$this->simulate_render();
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );
+
+				if ( function_exists( '\codecept_debug' ) ) {
+					\codecept_debug( 'STYLES_RESOLVER_RETURN: ' . implode( ',', $queue ) );
+				}
 
 				return $queue;
 			},
