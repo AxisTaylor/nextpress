@@ -297,6 +297,9 @@ class Uri_Assets extends Model {
 				global $wp_scripts;
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_scripts->queue ?? [], $wp_scripts );
 
+				$wp_scripts->reset();
+				$wp_scripts->queue = [];
+
 				return $queue;
 			},
 			'enqueuedStylesheetsQueue' => function () {
@@ -304,6 +307,9 @@ class Uri_Assets extends Model {
 
 				$this->simulate_render();
 				$queue = WP_Assets::flatten_enqueued_assets_list( $wp_styles->queue ?? [], $wp_styles );
+
+				$wp_styles->reset();
+				$wp_styles->queue = [];
 
 				return $queue;
 			},
