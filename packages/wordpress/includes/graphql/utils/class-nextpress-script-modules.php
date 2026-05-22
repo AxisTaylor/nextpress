@@ -39,16 +39,13 @@ class NextPress_Script_Modules extends \WP_Script_Modules {
 	 * @return array<string, array<string, mixed>> Keyed by module ID.
 	 */
 	public static function get_registered_modules(): array {
-		$modules = \wp_script_modules();
-
-		// This whole class is a workaround for `WP_Script_Modules` keeping
-		// its registry private. WP 6.7+ ships a public `get_registered()`
-		// accessor on the base class, so on those installs we just call
-		// straight into it and skip the closure-bind dance below.
-		if ( method_exists( $modules, 'get_registered' ) ) {
-			return $modules->get_registered();
-		}
-
+		// Read the private `$registered` property via a closure rebound
+		// to WP_Script_Modules' class scope.
+		//
+		// Note: WP 7.0 added a public `WP_Script_Modules::get_registered( string $id )`
+		// — but it returns a single module by ID, NOT the full registry,
+		// so we can't delegate to it here. The closure-bound read works on
+		// every WP version that ships the class.
 		$reader = \Closure::bind(
 			static function ( \WP_Script_Modules $instance ) {
 				return $instance->registered;
@@ -57,7 +54,7 @@ class NextPress_Script_Modules extends \WP_Script_Modules {
 			\WP_Script_Modules::class
 		);
 
-		return $reader( $modules );
+		return $reader( \wp_script_modules() );
 	}
 
 	/**
