@@ -91,6 +91,68 @@ describe('scopeStylesheet', () => {
     expect(out).toContain(':root:where(.dark){--fg: white;}');
   });
 
+  it('extracts :root blocks even when they contain inline CSS comments', () => {
+    // Regression: a `/* … */` between declarations made `isVariablesOnly`
+    // return false (split-by-`;` produced a piece starting with `/`, not
+    // `--`). The block fell through to the scope rewrite and became
+    // `:scope { … }`, shadowing dark-mode tokens for descendants of the
+    // scope element. Comments are stripped at the top of scopeStylesheet
+    // so this kind of authoring no longer breaks extraction.
+    const css = `:root {
+      --fg: cello;
+      /* Gradient docblock that previously broke extraction.
+       * Multi-line, with intentionally tricky tokens like ; and {} in prose.
+       */
+      --gradient: linear-gradient(180deg, red, blue);
+    }`;
+    const out = scopeStylesheet(css);
+    expect(out).toMatch(/^:root\{/);
+    expect(out).toContain('--fg: cello');
+    expect(out).toContain('--gradient: linear-gradient(180deg, red, blue)');
+    // No comment text survives in the output.
+    expect(out).not.toContain('Gradient docblock');
+    // Nothing leaks back into the @scope wrapper.
+    const scopeStart = out.indexOf('@scope (');
+    expect(out.indexOf(':scope', scopeStart)).toBe(-1);
+  });
+
+  it('extracts :root.dark blocks that contain inline comments', () => {
+    const css = `:root.dark {
+      /* Dark-theme tokens */
+      --bg: black;
+      --fg: white;
+    }`;
+    const out = scopeStylesheet(css);
+    expect(out).toContain(':root.dark{');
+    expect(out).toContain('--bg: black');
+    expect(out).toContain('--fg: white');
+  });
+
+  it('still scopes :root blocks that mix variables with real declarations', () => {
+    // Comment-stripping must not paper over genuine non-variable rules.
+    // A block with `color: blue` alongside `--foo` is NOT variables-only
+    // and must go through the scope rewrite.
+    const css = ':root { /* a comment */ --foo: red; color: blue; }';
+    const out = scopeStylesheet(css);
+    expect(out).not.toMatch(/^:root\{/);
+    // The stripped block reaches the rewrite without the comment text.
+    // (Whitespace left where the comment used to be is fine — CSS doesn't
+    // care, and collapsing it could merge tokens elsewhere.)
+    expect(out).toMatch(/:scope\s*\{\s*--foo:\s*red;\s*color:\s*blue;\s*\}/);
+    expect(out).not.toContain('a comment');
+  });
+
+  it('strips selector-position comments before the scope rewrite', () => {
+    // A comment inside or beside a selector shouldn't break selector
+    // matching downstream. After stripping, the selector is canonical.
+    const css = `body /* leading */ { margin: 0; } /* between */ .x { color: red; }`;
+    const out = scopeStylesheet(css);
+    expect(out).toMatch(/&\s*\{\s*margin:\s*0;\s*\}/);
+    expect(out).toMatch(/\.x\s*\{\s*color:\s*red;\s*\}/);
+    expect(out).not.toContain('leading');
+    expect(out).not.toContain('between');
+  });
+
   it('does NOT extract :root with descendant combinators (those are real descendant rules)', () => {
     // `:root .foo` is a descendant selector — not a root variable block.
     // It must NOT be extracted; the `.foo` part is a real scoped match.

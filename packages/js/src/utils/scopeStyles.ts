@@ -1,8 +1,28 @@
 const SCOPE_SELECTOR = '[data-rendered]';
 
 /**
- * Returns true when every semicolon-separated declaration in the block
- * is a CSS custom property (--name: value).
+ * Strips CSS block comments from a string. CSS comments can't nest, so a
+ * non-greedy match between the slash-star and star-slash delimiters is
+ * sufficient.
+ *
+ * Comments are stripped once at the top of `scopeStylesheet` so every
+ * downstream pass — `extractCSSVariables`, `isVariablesOnly`, the
+ * `:root` -> `:scope` rewrite — runs on canonical CSS. This avoids two
+ * classes of bug:
+ *
+ *  1. Variables-only blocks slipping through to the scope rewrite
+ *     because a docblock between declarations made `isVariablesOnly`
+ *     return false (split-by-`;` produced a piece starting with `/`).
+ *  2. Selectors hiding inside comments accidentally matching the
+ *     `:root` / `body` / `html` rewrite regexes.
+ */
+function stripCssComments(content: string): string {
+  return content.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+/**
+ * Returns true when every semicolon-separated declaration in the block is a
+ * CSS custom property (`--name: value`).
  */
 function isVariablesOnly(content: string): boolean {
   return content
@@ -92,16 +112,18 @@ export interface ScopeStylesheetOptions {
 /**
  * Scopes a stylesheet to only apply within [data-rendered] elements.
  *
- * Extracts :root variable-only blocks and emits them globally (CSS variables
- * are inert until referenced via var() so they're safe to leave unscoped).
- * Rewrites remaining body/html/:root selectors to the scope root reference (&)
- * and wraps in @scope, optionally inside @layer.
+ * Strips CSS block comments up front, then extracts :root variable-only
+ * blocks and emits them globally (CSS variables are inert until referenced
+ * via var() so they're safe to leave unscoped). Rewrites remaining
+ * body/html/:root selectors to the scope root reference (&) and wraps in
+ * @scope, optionally inside @layer.
  */
 export function scopeStylesheet(
   css: string,
   options: ScopeStylesheetOptions = {},
 ): string {
-  const { variables, rest } = extractCSSVariables(css);
+  const stripped = stripCssComments(css);
+  const { variables, rest } = extractCSSVariables(stripped);
 
   // Rewrite body, html, and :root selectors to & (scope root reference)
   // Handles: body, html, body.class, html[attr], :root :where(...), etc.
