@@ -448,46 +448,82 @@ class Assets {
 		}
 
 		if ( \is_string( $value ) ) {
-			// Parse URLs to get hosts for comparison
+			// Parse URLs to get hosts/paths for comparison.
 			$home_parsed = wp_parse_url( $home_url );
 			$site_parsed = wp_parse_url( $site_url );
 
 			$home_host = isset( $home_parsed['host'] ) ? $home_parsed['host'] : '';
 			$site_host = isset( $site_parsed['host'] ) ? $site_parsed['host'] : '';
 
-			// Check if the string contains a WordPress URL
+			// site_url's path is the WordPress install subdirectory
+			// (e.g. `/wp` on a Bedrock setup, empty on a root install).
+			// We strip it so the emitted placeholder path is always relative
+			// to the WP root — installation-agnostic.
+			$site_path = isset( $site_parsed['path'] ) ? rtrim( $site_parsed['path'], '/' ) : '';
+
 			$parsed = wp_parse_url( $value );
 
 			if ( ! isset( $parsed['host'] ) ) {
 				return $value;
 			}
 
-			// Check if URL is from our WordPress installation
-			$is_wp_url = ( $parsed['host'] === $home_host || $parsed['host'] === $site_host );
+			$is_site_url = ( $parsed['host'] === $site_host );
+			$is_home_url = ( $parsed['host'] === $home_host );
 
-			if ( ! $is_wp_url ) {
+			if ( ! $is_site_url && ! $is_home_url ) {
 				return $value;
 			}
 
-			// Determine the path
-			$path = isset( $parsed['path'] ) ? $parsed['path'] : '';
+			$path         = isset( $parsed['path'] ) ? $parsed['path'] : '';
+			$query_string = isset( $parsed['query'] ) ? $parsed['query'] : '';
 
-			// Check if this is an asset URL (wp-content, wp-includes, wp-admin)
-			$is_asset_url = preg_match( '/^\/wp-(?:content|includes|admin)\//', $path );
-
-			// Get the scheme
-			$scheme = isset( $parsed['scheme'] ) ? $parsed['scheme'] : 'http';
-
-			// Build query string if present
-			$query = isset( $parsed['query'] ) ? '?' . $parsed['query'] : '';
-
-			if ( $is_asset_url ) {
-				// Asset URL → use __NEXTPRESS_ASSETS__ placeholder
-				return "{$scheme}://__NEXTPRESS_ASSETS__{$path}{$query}";
-			} else {
-				// Page URL → use __NEXTPRESS_PROXY__ placeholder
-				return "{$scheme}://__NEXTPRESS_PROXY__{$path}{$query}";
+			// Normalize path: when targeting site_url, strip the install
+			// subdirectory so $path is relative to the WP root.
+			if ( $is_site_url && '' !== $site_path && 0 === strpos( $path, $site_path . '/' ) ) {
+				$path = substr( $path, strlen( $site_path ) );
 			}
+
+			$scheme = isset( $parsed['scheme'] ) ? $parsed['scheme'] : 'http';
+			$query  = '' !== $query_string ? '?' . $query_string : '';
+
+			// Map the WP URL to the appropriate proxy route alias inside the
+			// __NEXTPRESS_ASSETS__ placeholder. Client-side replacement just
+			// swaps the placeholder host for `/atx/<instance>` — no path
+			// rewriting needed on that side.
+
+			// wc-ajax — identified by `wc-ajax=` in the query. Routes to the
+			// `/wc` proxy alias which fetches `${wpHomeUrl}/?<query>` with
+			// proper method/headers/body forwarding.
+			if ( '' !== $query_string && preg_match( '/(?:^|&)wc-ajax=/', $query_string ) ) {
+				return "{$scheme}://__NEXTPRESS_ASSETS__/wc{$query}";
+			}
+
+			// admin-ajax.php — routes to the `/wp` proxy alias which fetches
+			// `${wpSiteUrl}/wp-admin/admin-ajax.php` with body forwarding
+			// (needed for AJAX POSTs).
+			if ( preg_match( '#/wp-admin/admin-ajax\.php$#', $path ) ) {
+				return "{$scheme}://__NEXTPRESS_ASSETS__/wp{$query}";
+			}
+
+			// wp-admin / wp-includes static assets — route through
+			// `/wp-internal-assets` which rewrites to `${wpSiteUrl}/<path>`.
+			if ( preg_match( '#^/wp-(?:admin|includes)/#', $path ) ) {
+				return "{$scheme}://__NEXTPRESS_ASSETS__/wp-internal-assets{$path}{$query}";
+			}
+
+			// wp-content assets — route through `/wp-assets` which rewrites
+			// to `${wpHomeUrl}/<path>`.
+			if ( preg_match( '#^/wp-content/#', $path ) ) {
+				return "{$scheme}://__NEXTPRESS_ASSETS__/wp-assets{$path}{$query}";
+			}
+
+			// REST API — route through the wp-json proxy.
+			if ( preg_match( '#^/wp-json/#', $path ) ) {
+				return "{$scheme}://__NEXTPRESS_ASSETS__{$path}{$query}";
+			}
+
+			// Anything else — public-facing page URL on home_url.
+			return "{$scheme}://__NEXTPRESS_PROXY__{$path}{$query}";
 		}
 
 		// Return non-string, non-array values unchanged
