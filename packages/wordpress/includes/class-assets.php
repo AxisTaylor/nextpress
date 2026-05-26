@@ -34,6 +34,8 @@ class Assets {
 
 		add_filter( 'woocommerce_store_api_disable_nonce_check', array( $this, 'disable_wc_nonce_check' ) );
 
+		add_filter( 'nextpress/graphql/uri-assets/skip_script_module_dependency', array( $this, 'skip_unbootstrapped_wc_handles' ), 10, 4 );
+
 		// Transform WooCommerce Stripe Gateway Express Checkout params
 		add_filter( 'wc_stripe_express_checkout_params', array( $this, 'transform_stripe_express_checkout_params' ) );
 		add_filter( 'wc_stripe_upe_params', array( $this, 'transform_stripe_express_checkout_params' ) );
@@ -314,6 +316,63 @@ class Assets {
 			&& $settings['enable_custom_wc_scripts'] === 'on';
 
 		return $is_enabled;
+	}
+
+	/**
+	 * Skip enqueued script handles whose runtime depends on Store API
+	 * extension data that only registers when the upstream plugin's TOS
+	 * / connection flow has run.
+	 *
+	 * `woocommerce-services-store-notices` reads
+	 * `cart.extensions["woocommerce-services"].notices` and crashes when
+	 * the key is missing. WC Services only registers that extension if
+	 * `tos_accepted` is true inside `WC_Connect_Loader::after_wc_init`,
+	 * so when TOS hasn't been accepted the script loads with no data to
+	 * read.
+	 *
+	 * @param string|false     $handle               Current handle being walked.
+	 * @param array            $queue                The flatten queue.
+	 * @param \WP_Dependencies $wp_assets            Active assets registry.
+	 * @param bool             $check_script_modules Whether modules are being walked.
+	 * @return string|false The handle, or false to drop it from the asset list.
+	 */
+	public function skip_unbootstrapped_wc_handles( $handle, $queue, $wp_assets, $check_script_modules ) {
+		$settings   = get_option( 'nextpress_headless_settings', array() );
+		$is_enabled = isset( $settings['enable_custom_wc_scripts'] )
+			&& $settings['enable_custom_wc_scripts'] === 'on';
+
+		if ( ! $is_enabled ) {
+			return $handle;
+		}
+
+		if ( 'woocommerce-services-store-notices' === $handle && ! $this->wc_services_tos_accepted() ) {
+			return false;
+		}
+
+		return $handle;
+	}
+
+	/**
+	 * Read the WC Services TOS-accepted flag.
+	 *
+	 * Prefers the upstream `WC_Connect_Options` accessor when WCS is
+	 * loaded; falls back to reading the underlying `wc_connect_options`
+	 * grouped option directly so this works even if WCS hasn't booted
+	 * far enough to expose its class.
+	 *
+	 * @return bool
+	 */
+	protected function wc_services_tos_accepted(): bool {
+		if ( class_exists( 'WC_Connect_Options' ) ) {
+			return (bool) \WC_Connect_Options::get_option( 'tos_accepted' );
+		}
+
+		$options = get_option( 'wc_connect_options' );
+		if ( is_array( $options ) && ! empty( $options['tos_accepted'] ) ) {
+			return true;
+		}
+
+		return (bool) get_option( 'wc_connect_tos_accepted', false );
 	}
 
 	/**

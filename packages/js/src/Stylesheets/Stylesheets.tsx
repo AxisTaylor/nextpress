@@ -6,7 +6,9 @@ import React, {
 import { preinit } from 'react-dom';
 
 import { EnqueuedStylesheet } from '@/types';
+import { getAllWPInstances, getWPInstance } from '@/config/getWPInstance';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
+import { resolveAssetHref } from '@/utils/url';
 
 export interface StyleProps {
   id?: string;
@@ -23,35 +25,18 @@ export type StylesheetsProps = {
   pathname?: string;
 };
 
-/**
- * Extracts the path from a URL, removing the protocol and domain
- */
-function extractPath(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.pathname;
-  } catch {
-    // If URL parsing fails, assume it's already a path
-    return url;
-  }
-}
-
-export function resolveStylesheetHref(src: string, instance: string): string {
-  const isInternalRoute = /^\/wp-(?:includes|admin)\//;
-  // Extract path from full URL if needed
-  const path = extractPath(src);
-
-  if (isInternalRoute.test(path)) {
-    // Internal WordPress path (e.g., /wp-includes/css/... or /wp-admin/css/...)
-    return `/atx/${instance}/wp-internal-assets${path}`;
-  } else {
-    // WordPress content path (e.g., /wp-content/...)
-    return `/atx/${instance}/wp-assets${path}`;
-  }
-}
+export const resolveStylesheetHref = resolveAssetHref;
 
 export function Stylesheets({ stylesheets, instance = 'default', pathname: _pathname = '' }: StylesheetsProps) {
-  
+  const { wpHomeUrl } = getWPInstance(instance);
+  const otherInstances = Object.entries(getAllWPInstances())
+    .reduce((acc, [slug, entry]) => {
+      if (entry.wpHomeUrl === wpHomeUrl) {
+        return acc;
+      }
+      acc[slug] = entry.wpHomeUrl;
+      return acc;
+    }, {} as Record<string, string>);
 
   return (
     <Fragment>
@@ -59,10 +44,9 @@ export function Stylesheets({ stylesheets, instance = 'default', pathname: _path
       {stylesheets.map((stylesheet) => {
         const { handle, src } = stylesheet;
 
-        // Determine the correct href for the stylesheet
         let href = '';
-         if (src) {
-          href = resolveStylesheetHref(src, instance);
+        if (src) {
+          href = resolveAssetHref(src, instance, wpHomeUrl, otherInstances);
           preinit(href, { as: 'style', precedence: handle as string });
         }
         const Link = 'link' as unknown as FC<JSX.IntrinsicElements['link'] & { precedence: string }>;
