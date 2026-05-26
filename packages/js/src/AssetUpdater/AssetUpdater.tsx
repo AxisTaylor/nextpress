@@ -1,17 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
 import { WPImport } from '@/ImportMap';
-import { getAllWPInstances, getWPInstance } from '@/config/getWPInstance';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
-import { resolveAssetHref } from '@/utils/url';
+import { transformAssetUrl } from '@/utils/url';
 import { firePageEvents } from '@/hooks/usePageEvents';
 import { joinScriptContent } from '@/utils/content';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
-
-interface AssetContext {
-  wpHomeUrl: string;
-  otherInstances: Record<string, string>;
-}
 
 export interface AssetData {
   stylesheets: EnqueuedStylesheet[];
@@ -131,7 +125,7 @@ function createScriptElement(
 /**
  * Replaces the stylesheet list between the nextpress-stylesheets-start/end markers.
  */
-function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, ctx: AssetContext): void {
+function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string): void {
   const range = clearBetweenMarkers(
     'nextpress-stylesheets-start',
     'nextpress-stylesheets-end',
@@ -156,7 +150,7 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, 
 
     if (stylesheet.src) {
       parent.insertBefore(
-        createLinkElement(handle, resolveAssetHref(stylesheet.src, instance, ctx.wpHomeUrl, ctx.otherInstances)),
+        createLinkElement(handle, transformAssetUrl(stylesheet.src, instance)),
         endMarker,
       );
     }
@@ -183,7 +177,6 @@ async function updateScripts(
   endId: string,
   instance: string,
   pathname: string,
-  ctx: AssetContext,
 ): Promise<void> {
   const range = clearBetweenMarkers(startId, endId);
   if (!range) return;
@@ -242,7 +235,7 @@ async function updateScripts(
     // ES modules don't have inline extra/before/after scripts — just load the src.
     if (isModule) {
       if (script.src) {
-        await insert(handle, { src: resolveAssetHref(script.src, instance, ctx.wpHomeUrl, ctx.otherInstances), isModule: true });
+        await insert(handle, { src: transformAssetUrl(script.src, instance), isModule: true });
       }
       continue;
     }
@@ -270,7 +263,7 @@ async function updateScripts(
     }
 
     if (script.src) {
-      await insert(handle, { src: resolveAssetHref(script.src, instance, ctx.wpHomeUrl, ctx.otherInstances) });
+      await insert(handle, { src: transformAssetUrl(script.src, instance) });
     }
 
     const afterScript = joinScriptContent(script.after);
@@ -346,7 +339,6 @@ function updateImportMap(
   imports: WPImport[] | null | undefined,
   instance: string,
   pathname: string,
-  ctx: AssetContext,
 ): void {
   const existing = document.getElementById('wp-importmap');
   if (existing) {
@@ -358,7 +350,7 @@ function updateImportMap(
   const map: Record<string, string> = {};
   for (const entry of imports) {
     // Paths use the RELATIVE scheme — route through the asset proxy.
-    map[entry.name] = resolveAssetHref(entry.path, instance, ctx.wpHomeUrl, ctx.otherInstances);
+    map[entry.name] = transformAssetUrl(entry.path, instance);
   }
 
   const el = document.createElement('script');
@@ -388,19 +380,6 @@ export function AssetUpdater({
   // pathname) re-fetches and re-applies assets.
   const hasMounted = useRef(false);
 
-  const assetContext = useMemo<AssetContext>(() => {
-    const { wpHomeUrl } = getWPInstance(instance);
-    const otherInstances = Object.entries(getAllWPInstances())
-      .reduce((acc, [slug, entry]) => {
-        if (entry.wpHomeUrl === wpHomeUrl) {
-          return acc;
-        }
-        acc[slug] = entry.wpHomeUrl;
-        return acc;
-      }, {} as Record<string, string>);
-    return { wpHomeUrl, otherInstances };
-  }, [instance]);
-
   useEffect(() => {
     if (!hasMounted.current) {
       hasMounted.current = true;
@@ -417,9 +396,9 @@ export function AssetUpdater({
         const assets = await fetchAssets(pathname);
         if (cancelled) return;
 
-        updateStylesheets(assets.stylesheets, instance, assetContext);
+        updateStylesheets(assets.stylesheets, instance);
         updateGlobalStyles(assets.globalStyles, instance, pathname);
-        updateImportMap(assets.importMap, instance, pathname, assetContext);
+        updateImportMap(assets.importMap, instance, pathname);
 
         // Insert head scripts sequentially, then body scripts sequentially,
         // so each script (inline or external) finishes executing before the
@@ -431,7 +410,6 @@ export function AssetUpdater({
           'nextpress-head-scripts-end',
           instance,
           pathname,
-          assetContext,
         );
         if (cancelled) return;
 
@@ -442,7 +420,6 @@ export function AssetUpdater({
           'nextpress-body-scripts-end',
           instance,
           pathname,
-          assetContext,
         );
         if (cancelled) return;
 
@@ -456,7 +433,7 @@ export function AssetUpdater({
     return () => {
       cancelled = true;
     };
-  }, [pathname, instance, fetchAssets, assetContext]);
+  }, [pathname, instance, fetchAssets]);
 
   return null;
 }
