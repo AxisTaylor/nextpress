@@ -31,13 +31,22 @@ class WP_Assets {
 			if ( 'global-styles' === $handle ) {
 				continue;
 			}
+
+			$handle = apply_filters(
+				'nextpress/graphql/uri-assets/skip_script_module_dependency',
+				$handle,
+				$queue,
+				$wp_assets,
+				$check_script_modules
+			);
+			if ( ! $handle ) {
+				continue;
+			}
+
 			if ( ! empty( $registered_scripts[ $handle ] ) ) {
 				/** @var \_WP_Dependency $script */
-				$script    = $registered_scripts[ $handle ];
-				$handles[] = $script->handle;
+				$script = $registered_scripts[ $handle ];
 
-				// Don't recurse into MODULE dependencies — those are resolved
-				// by the browser's import map, not by <script> tags.
 				$is_module = isset( $script->extra['type'] ) && 'module' === $script->extra['type'];
 				if ( ! $is_module ) {
 					$formatted_dependencies = array_map(
@@ -45,11 +54,20 @@ class WP_Assets {
 						(array) ( $script->deps ?? [] )
 					);
 					$dependencies = self::flatten_enqueued_assets_list( $formatted_dependencies, $wp_assets, $check_script_modules );
-					if ( ! empty( $dependencies ) ) {
-						array_unshift( $handles, ...$dependencies );
+					
+					$dependencies = apply_filters(
+						'nextpress/graphql/uri-assets/script_dependencies',
+						$dependencies,
+						$handle,
+						$script
+					);
+
+					foreach ( $dependencies as $dep ) {
+						$handles[] = $dep;
 					}
 				}
 
+				$handles[] = $script->handle;
 				continue;
 			}
 
@@ -57,13 +75,10 @@ class WP_Assets {
 				continue;
 			}
 
-			// Check if it's in the script modules registry.
 			$all_modules = class_exists( NextPress_Script_Modules::class ) ? NextPress_Script_Modules::get_registered_modules() : [];
 			if ( isset( $all_modules[ $handle ] ) ) {
 				$module_data = $all_modules[ $handle ];
-				$handles[]   = $handle;
 
-				// Collect module dependency IDs and recurse.
 				$module_deps = [];
 				foreach ( (array) ( $module_data['dependencies'] ?? [] ) as $dep ) {
 					if ( is_array( $dep ) && isset( $dep['id'] ) ) {
@@ -75,12 +90,20 @@ class WP_Assets {
 
 				if ( ! empty( $module_deps ) ) {
 					$dependencies = self::flatten_enqueued_assets_list( $module_deps, $wp_assets, $check_script_modules );
-					if ( ! empty( $dependencies ) ) {
-						array_unshift( $handles, ...$dependencies );
+					$dependencies = apply_filters(
+						'nextpress/graphql/uri-assets/script_module_dependencies',
+						$dependencies,
+						$handle,
+						$module_data
+					);
+
+					foreach ( $dependencies as $dep ) {
+						$handles[] = $dep;
 					}
 				}
-			}
 
+				$handles[] = $handle;
+			}
 		}
 
 		return array_values( array_unique( $handles ) );
