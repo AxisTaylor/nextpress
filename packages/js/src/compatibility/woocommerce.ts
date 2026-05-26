@@ -14,12 +14,12 @@
  * @param instance - WordPress instance slug for proxy route
  * @returns String with placeholders replaced
  */
-export function replaceProxyPlaceholders(content: string, instance: string, pathname: string): string {
+export function replaceProxyPlaceholders(content: string, instance: string, _pathname?: string): string {
   if (!content) {
     return content;
   }
 
-  const frontendOrigin = `${(process.env.wcr_frontend_url || '')}/${pathname}`;
+  const frontendOrigin = process.env.wcr_frontend_url || '';
   const proxyRouteBase = `/atx/${instance}`;
 
   let result = content;

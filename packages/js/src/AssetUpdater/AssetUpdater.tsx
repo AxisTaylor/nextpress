@@ -14,6 +14,22 @@ export interface AssetData {
   importMap?: WPImport[] | null;
 }
 
+/**
+ * External script srcs already loaded in this browser session. Removing
+ * a `<script>` element from the DOM does NOT undo its side effects — any
+ * globals it defined and any `customElements.define()` calls it made
+ * persist. Re-inserting the same external src on the next navigation
+ * therefore re-runs the IIFE and breaks anything non-idempotent
+ * (e.g. wc-order-attribution throws `NotSupportedError: the name
+ * "wc-order-attribution-inputs" has already been used`).
+ *
+ * Session-scoped (lives for the lifetime of the page) so navigation
+ * between many WP-instance pages doesn't accumulate forever in practice.
+ * Cleared automatically on full page reload.
+ */
+const loadedExternalSrcs = new Set<string>();
+
+
 export interface AssetUpdaterProps {
   /**
    * The current pathname being rendered.
@@ -178,6 +194,27 @@ async function updateScripts(
   instance: string,
   pathname: string,
 ): Promise<void> {
+  // Seed the dedupe set from scripts currently between the markers
+  // before clearing. Server-rendered scripts (initial page load) and
+  // scripts inserted by a previous AssetUpdater run have both already
+  // executed — their side effects are in JS land regardless of whether
+  // their <script> element still exists in the DOM. Comparing on the
+  // raw src attribute matches how we insert new scripts below.
+  const startSeed = document.getElementById(startId);
+  const endSeed = document.getElementById(endId);
+  if (startSeed && endSeed) {
+    let node: ChildNode | null = startSeed.nextSibling;
+    while (node && node !== endSeed) {
+      if (node instanceof HTMLScriptElement) {
+        const seedSrc = node.getAttribute('src');
+        if (seedSrc) {
+          loadedExternalSrcs.add(seedSrc);
+        }
+      }
+      node = node.nextSibling;
+    }
+  }
+
   const range = clearBetweenMarkers(startId, endId);
   if (!range) return;
 
@@ -235,7 +272,11 @@ async function updateScripts(
     // ES modules don't have inline extra/before/after scripts — just load the src.
     if (isModule) {
       if (script.src) {
-        await insert(handle, { src: transformAssetUrl(script.src, instance), isModule: true });
+        const src = transformAssetUrl(script.src, instance);
+        if (!loadedExternalSrcs.has(src)) {
+          loadedExternalSrcs.add(src);
+          await insert(handle, { src, isModule: true });
+        }
       }
       continue;
     }
@@ -263,7 +304,11 @@ async function updateScripts(
     }
 
     if (script.src) {
-      await insert(handle, { src: transformAssetUrl(script.src, instance) });
+      const src = transformAssetUrl(script.src, instance);
+      if (!loadedExternalSrcs.has(src)) {
+        loadedExternalSrcs.add(src);
+        await insert(handle, { src });
+      }
     }
 
     const afterScript = joinScriptContent(script.after);
