@@ -1,5 +1,11 @@
 # @axistaylor/nextpress
 
+## 1.5.6
+
+### Patch Changes
+
+- [#57](https://github.com/AxisTaylor/nextpress/pull/57) [`4bbe1a9`](https://github.com/AxisTaylor/nextpress/commit/4bbe1a979baf422ec1bbe737afbf7ee6ee58a4ab) Thanks [@kidunot89](https://github.com/kidunot89)! - Export `CustomParser` and `ElementProps` types from the package root. Consumers writing a `Content` `customParser` can now `import type { CustomParser, ElementProps } from '@axistaylor/nextpress'` instead of mirroring the type signature locally. Types are sourced from a new dedicated `parsers/types` module so the parsing utility (`utils/parseHtml`) no longer owns both runtime helpers and public types.
+
 ## 1.5.5
 
 ### Patch Changes
