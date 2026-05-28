@@ -4,7 +4,7 @@ import {
   domToReact,
   Element,
 } from 'html-react-parser';
-import type { ElementProps, CustomParser } from '@/utils/parseHtml';
+import type { ElementProps, CustomParser } from '@/parsers/types';
 
 export interface UrlRewritingParserOptions {
   wpHomeUrl?: string;
@@ -64,4 +64,3 @@ export function createUrlRewritingParser({
   };
 }
 
-export { ElementProps, CustomParser };

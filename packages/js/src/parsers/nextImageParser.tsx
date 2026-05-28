@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import type { DOMNode } from 'html-react-parser';
-import type { CustomParser, ElementProps } from '@/utils/parseHtml';
+import type { CustomParser, ElementProps } from '@/parsers/types';
 
 /**
  * Optional Content parser that converts WordPress <img> tags to Next.js
