@@ -1,7 +1,8 @@
 import React, { FC } from 'react';
 import clsx from 'clsx';
 import { getWPInstance } from '@/config/getWPInstance';
-import { parseHtml, CustomParser } from '@/utils/parseHtml';
+import { parseHtml } from '@/utils/parseHtml';
+import type { CustomParser } from '@/parsers/types';
 import { createUrlRewritingParser } from '@/parsers/urlRewritingParser';
 
 

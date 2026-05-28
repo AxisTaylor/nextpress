@@ -1,21 +1,12 @@
 import React from 'react';
 import parse, {
-  DOMNode,
   domToReact,
   HTMLReactParserOptions,
   Element,
   attributesToProps,
 } from 'html-react-parser';
 
-/**
- * Type for HTML element props returned by attributesToProps
- */
-export type ElementProps = ReturnType<typeof attributesToProps>;
-
-/**
- * Type for custom parser functions
- */
-export type CustomParser = (node: DOMNode, props: ElementProps, children?: DOMNode[]|DOMNode) => JSX.Element | undefined;
+import type { CustomParser } from '@/parsers/types';
 
 export function parseHtml(
   html: string,
