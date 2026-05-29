@@ -26,6 +26,7 @@ import {
 export interface AssetUpdaterProps {
   fetchAssets: (uri: string) => Promise<AssetData>;
   instance?: string;
+  bypassDomains?: string[];
 }
 
 export function AssetUpdater(props: AssetUpdaterProps) {
@@ -34,6 +35,7 @@ export function AssetUpdater(props: AssetUpdaterProps) {
     <BaseAssetUpdater
       fetchAssets={props.fetchAssets}
       instance={props.instance}
+      bypassDomains={props.bypassDomains}
       pathname={pathname}
     />
   );
@@ -102,6 +104,7 @@ export async function fetchAssets(uri: string): Promise<AssetData> {
 | `pathname` | `string` | Yes | The current pathname being rendered (usually sourced from `headers().get('x-uri')`) |
 | `fetchAssets` | `(uri: string) => Promise<AssetData>` | Yes | Server action that returns fresh stylesheets, scripts, and global styles for a URI |
 | `instance` | `string` | No | WordPress instance slug used for proxy URL rewriting (default: `'default'`) |
+| `bypassDomains` | `string[]` | No | Domains whose scripts/stylesheets load directly from their original URL instead of being proxied — e.g. `['js.stripe.com', 'fonts.googleapis.com']`. Matched by hostname; a root domain covers its subdomains (`stripe.com` covers `js.stripe.com`). Default: `[]` |
 
 ### `AssetData`
 
@@ -130,6 +133,23 @@ On initial mount the effect is skipped (the server already rendered those assets
 3. Clears every DOM node between each marker pair and reinserts fresh elements — stylesheets first, then head scripts, then body scripts — matching the document order the server would have produced.
 4. Inserts scripts **sequentially**, awaiting each one's load (`async=false` for external, event-dispatched completion for inline), so execution order and cross-script global state are preserved.
 5. Fires `DOMContentLoaded`, `load`, and `nextpress:page-change` so WordPress scripts that initialize on those events get a chance to re-run.
+
+## External Origins (`bypassDomains`)
+
+By default every stylesheet/script `src` is rewritten to route through the instance asset proxy (`/atx/<instance>/wp-assets/…`). That's correct for WordPress-served assets, but breaks third-party assets that can't be served through the proxy — payment gateways, web fonts, analytics, and the like (e.g. `https://js.stripe.com/v3/` would become `/atx/<instance>/wp-assets/v3/` and 404).
+
+Pass `bypassDomains` to keep those assets on their original URL:
+
+```tsx
+<AssetUpdater
+  fetchAssets={fetchAssets}
+  bypassDomains={['js.stripe.com', 'fonts.googleapis.com', 'fonts.gstatic.com']}
+/>
+```
+
+Matching is by **hostname** (scheme- and port-agnostic), and a root domain covers its subdomains — `stripe.com` matches both `stripe.com` and `js.stripe.com`.
+
+Keep this list aligned with the external origins your server-side asset rendering already emits directly: the server marks non-WordPress origins as external and renders their raw URLs, and `bypassDomains` is how the client reproduces that decision on navigation. When they agree, the initial SSR markup and the navigation-time markup match — including the external-script dedupe key — so third-party scripts aren't re-run.
 
 ## Inline Script Synchronization
 

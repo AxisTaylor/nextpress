@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
 import { WPImport } from '@/ImportMap';
 import { scopeInlineStyles } from '@/utils/scopeStyles';
-import { transformAssetUrl } from '@/utils/url';
+import { transformAssetUrl, isBypassedHost } from '@/utils/url';
 import { firePageEvents } from '@/hooks/usePageEvents';
 import { joinScriptContent } from '@/utils/content';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
@@ -29,6 +29,15 @@ export interface AssetData {
  */
 const loadedExternalSrcs = new Set<string>();
 
+/**
+ * Resolves an asset src to load: assets whose host is (or is a subdomain of)
+ * a bypassed domain keep their original external URL; everything else is
+ * routed through the instance asset proxy.
+ */
+function resolveAssetSrc(src: string, instance: string, bypassDomains: string[]): string {
+  return isBypassedHost(src, bypassDomains) ? src : transformAssetUrl(src, instance);
+}
+
 
 export interface AssetUpdaterProps {
   /**
@@ -46,6 +55,13 @@ export interface AssetUpdaterProps {
    * require server-side credentials.
    */
   fetchAssets: (uri: string) => Promise<AssetData>;
+  /**
+   * Domains whose scripts/stylesheets should load directly from their
+   * original URL instead of being proxied through the instance — e.g.
+   * `['js.stripe.com', 'fonts.googleapis.com']`. Matched by hostname, with
+   * root domains covering subdomains (`stripe.com` covers `js.stripe.com`).
+   */
+  bypassDomains?: string[];
 }
 
 /**
@@ -141,7 +157,7 @@ function createScriptElement(
 /**
  * Replaces the stylesheet list between the nextpress-stylesheets-start/end markers.
  */
-function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string): void {
+function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, bypassDomains: string[]): void {
   const range = clearBetweenMarkers(
     'nextpress-stylesheets-start',
     'nextpress-stylesheets-end',
@@ -166,7 +182,7 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string):
 
     if (stylesheet.src) {
       parent.insertBefore(
-        createLinkElement(handle, transformAssetUrl(stylesheet.src, instance)),
+        createLinkElement(handle, resolveAssetSrc(stylesheet.src, instance, bypassDomains)),
         endMarker,
       );
     }
@@ -193,6 +209,7 @@ async function updateScripts(
   endId: string,
   instance: string,
   pathname: string,
+  bypassDomains: string[],
 ): Promise<void> {
   // Seed the dedupe set from scripts currently between the markers
   // before clearing. Server-rendered scripts (initial page load) and
@@ -247,12 +264,9 @@ async function updateScripts(
     onExecuted?: () => void,
   ): Promise<void> => {
     const eventName = `nextpress:inline-executed:${id}`;
-    const instrumented = `${content}\n;console.log('[AssetUpdater] inline executed:', ${JSON.stringify(id)});document.dispatchEvent(new CustomEvent(${JSON.stringify(eventName)}));`;
+    const instrumented = `${content}\n;document.dispatchEvent(new CustomEvent(${JSON.stringify(eventName)}));`;
     const executed = new Promise<void>((resolve) => {
-      document.addEventListener(eventName, () => {
-        console.log('[AssetUpdater] event received:', eventName);
-        resolve();
-      }, { once: true });
+      document.addEventListener(eventName, () => resolve(), { once: true });
     });
     await insert(id, { content: instrumented });
     await executed;
@@ -272,7 +286,7 @@ async function updateScripts(
     // ES modules don't have inline extra/before/after scripts — just load the src.
     if (isModule) {
       if (script.src) {
-        const src = transformAssetUrl(script.src, instance);
+        const src = resolveAssetSrc(script.src, instance, bypassDomains);
         if (!loadedExternalSrcs.has(src)) {
           loadedExternalSrcs.add(src);
           await insert(handle, { src, isModule: true });
@@ -295,16 +309,13 @@ async function updateScripts(
         `${handle}-js-before`,
         beforeScript,
         handle === 'wc-settings'
-          ? () => {
-              console.log('[AssetUpdater] processWcSettings callback fired, wcSettings:', window.wcSettings);
-              processWcSettings(instance);
-            }
+          ? () => processWcSettings(instance)
           : undefined,
       );
     }
 
     if (script.src) {
-      const src = transformAssetUrl(script.src, instance);
+      const src = resolveAssetSrc(script.src, instance, bypassDomains);
       if (!loadedExternalSrcs.has(src)) {
         loadedExternalSrcs.add(src);
         await insert(handle, { src });
@@ -419,6 +430,7 @@ export function AssetUpdater({
   pathname,
   instance = 'default',
   fetchAssets,
+  bypassDomains = [],
 }: AssetUpdaterProps) {
   // Skip only the initial mount — the server already rendered those assets.
   // Every effect run after the first one (including returning to the initial
@@ -441,7 +453,7 @@ export function AssetUpdater({
         const assets = await fetchAssets(pathname);
         if (cancelled) return;
 
-        updateStylesheets(assets.stylesheets, instance);
+        updateStylesheets(assets.stylesheets, instance, bypassDomains);
         updateGlobalStyles(assets.globalStyles, instance, pathname);
         updateImportMap(assets.importMap, instance, pathname);
 
@@ -455,6 +467,7 @@ export function AssetUpdater({
           'nextpress-head-scripts-end',
           instance,
           pathname,
+          bypassDomains,
         );
         if (cancelled) return;
 
@@ -465,6 +478,7 @@ export function AssetUpdater({
           'nextpress-body-scripts-end',
           instance,
           pathname,
+          bypassDomains,
         );
         if (cancelled) return;
 
