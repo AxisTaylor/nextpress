@@ -16,6 +16,25 @@ function getHost(url: string): string | null {
 }
 
 /**
+ * True when the URL's hostname is, or is a subdomain of, any domain in the
+ * bypass list. Matched scheme- and port-agnostically by hostname, with root
+ * domains covering their subdomains — `stripe.com` matches both `stripe.com`
+ * and `js.stripe.com`.
+ */
+export function isBypassedHost(url: string, bypassDomains: string[]): boolean {
+  let hostname: string;
+  try {
+    hostname = new URL(withScheme(url)).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return bypassDomains.some((domain) => {
+    const d = domain.trim().toLowerCase().replace(/^\.+/, '').replace(/\/.*$/, '');
+    return d !== '' && (hostname === d || hostname.endsWith(`.${d}`));
+  });
+}
+
+/**
  * Extracts the path from a URL, removing the protocol and domain.
  */
 export function extractPath(url: string): string {
