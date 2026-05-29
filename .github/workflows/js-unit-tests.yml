@@ -30,14 +30,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      # Node 24 bundles npm 11, whose `npm ci` stalls on this dependency tree;
-      # pin to npm 10 to match the Node 20/22 jobs.
-      - name: Pin npm 10
-        if: matrix.node-version == 24
-        run: npm install -g npm@10
-
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build package
         run: npm run build:js
