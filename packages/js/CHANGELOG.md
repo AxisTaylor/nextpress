@@ -1,5 +1,15 @@
 # @axistaylor/nextpress
 
+## 1.5.7
+
+### Patch Changes
+
+- [#59](https://github.com/AxisTaylor/nextpress/pull/59) [`3db5a80`](https://github.com/AxisTaylor/nextpress/commit/3db5a80ff7f54088bf8db2ca9ce78a5a44f608a2) Thanks [@kidunot89](https://github.com/kidunot89)! - `AssetUpdater`: add a `bypassDomains` prop so scripts and stylesheets from listed origins (payment gateways, web fonts, analytics) load from their original URL instead of being routed through the instance asset proxy — where they 404 on client-side navigation (e.g. `https://js.stripe.com/v3/` → `/atx/<instance>/wp-assets/v3/`).
+
+  Domains are matched by hostname (scheme- and port-agnostic), with root domains covering subdomains — `stripe.com` covers `js.stripe.com`. This mirrors the server-side external-origin check, so the initial SSR markup and navigation-time markup (and the external-script dedupe key) stay in sync.
+
+  Also removes leftover `[AssetUpdater]` debug console logs.
+
 ## 1.5.6
 
 ### Patch Changes
