@@ -42,6 +42,10 @@ class MockHeaders {
     return this.map.has(name.toLowerCase());
   }
 
+  delete(name: string): void {
+    this.map.delete(name.toLowerCase());
+  }
+
   forEach(callback: (value: string, key: string) => void): void {
     this.map.forEach(callback);
   }
