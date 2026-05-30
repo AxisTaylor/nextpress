@@ -370,6 +370,37 @@ describe('proxyByWCR', () => {
       // Original headers should be preserved in the response
       expect(response.headers.get('x-middleware-rewrite')).toBeDefined();
     });
+
+    it('strips hop-by-hop headers before forwarding to fetch (undici rejects them)', async () => {
+      const url = 'https://nextjs.example.com/atx/main/wp-json/wp/v2/posts';
+      const request = new Request(url, {
+        method: 'GET',
+        headers: new Headers({
+          'connection': 'keep-alive',
+          'keep-alive': 'timeout=5',
+          'transfer-encoding': 'chunked',
+          'upgrade': 'h2c',
+          'proxy-authorization': 'Basic abc',
+          'authorization': 'Bearer token123',
+          'cookie': 'wordpress_logged_in=…',
+        }),
+      });
+
+      Object.assign(request, { nextUrl: { pathname: '/atx/main/wp-json/wp/v2/posts' } });
+
+      await proxyByWCR(request as any);
+
+      const fetchMock = global.fetch as jest.Mock;
+      expect(fetchMock).toHaveBeenCalled();
+      const forwardedHeaders = fetchMock.mock.calls[0][1].headers as Headers;
+      expect(forwardedHeaders.get('connection')).toBeNull();
+      expect(forwardedHeaders.get('keep-alive')).toBeNull();
+      expect(forwardedHeaders.get('transfer-encoding')).toBeNull();
+      expect(forwardedHeaders.get('upgrade')).toBeNull();
+      expect(forwardedHeaders.get('proxy-authorization')).toBeNull();
+      expect(forwardedHeaders.get('authorization')).toBe('Bearer token123');
+      expect(forwardedHeaders.get('cookie')).toBe('wordpress_logged_in=…');
+    });
   });
 
   describe('isProxiedRoute helper', () => {

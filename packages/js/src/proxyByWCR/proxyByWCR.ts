@@ -3,6 +3,31 @@ import { getWPInstance } from '@/config/getWPInstance';
 import { scopeStylesheet } from '@/utils/scopeStyles';
 
 /**
+ * Hop-by-hop headers (RFC 7230 §6.1) plus headers fetch() manages itself.
+ * Forwarding these to fetch() throws UND_ERR_INVALID_ARG under undici.
+ */
+const HOP_BY_HOP_HEADERS = [
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailer',
+  'transfer-encoding',
+  'upgrade',
+  'host',
+  'content-length',
+];
+
+function forwardableHeaders(source: Headers): Headers {
+  const out = new Headers(source);
+  for (const name of HOP_BY_HOP_HEADERS) {
+    out.delete(name);
+  }
+  return out;
+}
+
+/**
  * Extracts the WordPress instance slug from the URL path
  * Expects paths like: /atx/[slug]/wc, /atx/[slug]/wp, /atx/[slug], etc.
  */
@@ -181,7 +206,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
     // Actually fetch from WordPress backend and proxy the response
     const backendResponse = await fetch(backendRoute, {
       method: request.method,
-      headers: request.headers,
+      headers: forwardableHeaders(request.headers),
       body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
       ...(request.method !== 'GET' && request.method !== 'HEAD' && request.body ? { duplex: 'half' } : {}),
     } as RequestInit);
@@ -211,7 +236,7 @@ export async function proxyByWCR(request: Request & { nextUrl: { pathname: strin
     // Actually fetch from WordPress backend and proxy the response
     const backendResponse = await fetch(backendRoute, {
       method: request.method,
-      headers: request.headers,
+      headers: forwardableHeaders(request.headers),
       body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
       ...(request.method !== 'GET' && request.method !== 'HEAD' && request.body ? { duplex: 'half' } : {}),
     } as RequestInit);
