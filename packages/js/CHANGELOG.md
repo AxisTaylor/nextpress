@@ -1,5 +1,11 @@
 # @axistaylor/nextpress
 
+## 1.5.8
+
+### Patch Changes
+
+- [#61](https://github.com/AxisTaylor/nextpress/pull/61) [`802d08b`](https://github.com/AxisTaylor/nextpress/commit/802d08b00932ab7e11137f1175554e72845f38f7) Thanks [@kidunot89](https://github.com/kidunot89)! - Strip hop-by-hop headers (Connection, Keep-Alive, Transfer-Encoding, Upgrade, Proxy-Authenticate, Proxy-Authorization, TE, Trailer) plus Host and Content-Length from `request.headers` before forwarding them to `fetch()` in `proxyByWCR`. Node's built-in `fetch` (undici) rejects these as forbidden request headers (`UND_ERR_INVALID_ARG`), which made `/atx/:instance/wp`, `/atx/:instance/wc`, and `/atx/:instance/wp-json/*` return `500 Internal Server Error` whenever the browser sent `Connection: keep-alive` — i.e. every browser request. End-to-end headers (`Authorization`, `Cookie`, `Cart-Token`, `Accept`, etc.) are still forwarded unchanged.
+
 ## 1.5.7
 
 ### Patch Changes
