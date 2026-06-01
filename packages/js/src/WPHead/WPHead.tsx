@@ -12,17 +12,29 @@ export interface WPHeadProps {
   importMap?: WPImport[];
   instance?: string;
   pathname?: string;
+  /**
+   * Handles of stylesheets that should keep blocking first paint
+   * (typically theme + critical layout sheets). Everything else is
+   * deferred — fetched with `media="print"` and promoted on load.
+   * Forwarded to `Stylesheets`.
+   */
+  criticalHandles?: string[];
 }
 
 /**
  * Server component that renders all WordPress head assets: global styles,
  * stylesheets, the script module import map, and header scripts.
  */
-export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance = 'default', pathname = '' }: WPHeadProps) {
+export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance = 'default', pathname = '', criticalHandles }: WPHeadProps) {
   return (
     <>
       {stylesheets && stylesheets.length > 0 && (
-        <Stylesheets stylesheets={stylesheets} instance={instance} pathname={pathname} />
+        <Stylesheets
+          stylesheets={stylesheets}
+          instance={instance}
+          pathname={pathname}
+          criticalHandles={criticalHandles}
+        />
       )}
       {globalStyles && (
         <GlobalStyles globalStyles={globalStyles} instance={instance} pathname={pathname} />
