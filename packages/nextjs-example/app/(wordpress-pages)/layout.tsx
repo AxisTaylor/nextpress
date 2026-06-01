@@ -23,6 +23,21 @@ export const metadata: Metadata = {
 // Force dynamic rendering to prevent caching of WordPress scripts/styles with stale nonces
 export const dynamic = 'force-dynamic';
 
+// Sheets that must paint above the fold. Anything outside this list
+// ships as `media="print"` and is promoted to `media="all"` once it
+// has loaded — so Lighthouse stops counting them as render-blocking.
+//
+// Adjust to match the active theme: include the theme's main handle
+// (typically `<theme-slug>-style`) plus any layout-critical sheets.
+const CRITICAL_STYLESHEET_HANDLES = [
+  'wp-block-library',
+  'wp-block-library-theme',
+  'global-styles',
+  'classic-theme-styles',
+  // Active theme shipped with backend-4-examples:
+  'custom-block-theme-style',
+];
+
 export default async function WordPressLayout({
   children,
 }: Readonly<PropsWithChildren>) {
@@ -41,6 +56,7 @@ export default async function WordPressLayout({
           globalStyles={globalStyles}
           importMap={importMap}
           pathname={uri}
+          criticalHandles={CRITICAL_STYLESHEET_HANDLES}
         />
       </head>
       <body className={inter.className}>
