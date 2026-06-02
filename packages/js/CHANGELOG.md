@@ -1,5 +1,11 @@
 # @axistaylor/nextpress
 
+## 1.7.1
+
+### Patch Changes
+
+- [#67](https://github.com/AxisTaylor/nextpress/pull/67) [`7cefc8e`](https://github.com/AxisTaylor/nextpress/commit/7cefc8efc9423e2fee787305291c749a04dcab9d) Thanks [@kidunot89](https://github.com/kidunot89)! - Add `skipFonts` boolean to `GlobalStyles` (forwarded by `WPHead`). When set, suppresses the `<style id="nextpress-font-faces">` block and its swap-script entirely — useful when the host application loads its own webfonts (e.g. via `next/font/google`) and doesn't want the WordPress-proxied `@font-face` declarations re-injected. Takes precedence over `deferFonts`.
+
 ## 1.7.0
 
 ### Minor Changes
