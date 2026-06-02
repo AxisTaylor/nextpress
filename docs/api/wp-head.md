@@ -55,6 +55,7 @@ export default async function WordPressLayout({ children }) {
 | `criticalHandles` | `string[]` | No | Stylesheet handles to keep render-blocking; everything else is deferred via `media="print"` + swap-on-load. Forwarded to [`Stylesheets`](./stylesheets.md#critical-handles). Omit to keep all sheets blocking. |
 | `deferFonts` | `boolean` | No | Defer the theme.json `@font-face` block off the critical path. Default `true`. Forwarded to [`GlobalStyles`](./global-styles.md#deferring-fonts). |
 | `deferGlobalStyles` | `boolean` | No | Defer the theme.json `stylesheet` content. Default `false`. Forwarded to [`GlobalStyles`](./global-styles.md#deferring-globalstyles). |
+| `skipFonts` | `boolean` | No | Suppress the theme.json `@font-face` block entirely. Default `false`. Set when the host app loads its own webfonts (e.g. via `next/font`). Forwarded to [`GlobalStyles`](./global-styles.md#skipping-fonts). Takes precedence over `deferFonts`. |
 
 ## Render-blocking budget
 
