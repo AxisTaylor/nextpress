@@ -38,12 +38,37 @@ export default async function WordPressLayout({ children }) {
 | `pathname` | `string` | No | Current page pathname; used when resolving proxy URL placeholders in font-face rules |
 | `deferFonts` | `boolean` | No | Defer the `@font-face` block off the critical path. Default `true`. See [Deferring fonts](#deferring-fonts). |
 | `deferGlobalStyles` | `boolean` | No | Defer the theme.json `stylesheet` content. Default `false` — opt in only when you can absorb a token-flash on first paint. |
+| `skipFonts` | `boolean` | No | Skip the `@font-face` block entirely. Default `false`. Set when the host app loads its own webfonts (e.g. via [`next/font`](https://nextjs.org/docs/app/api-reference/components/font)) and doesn't want the WP-proxied font-face declarations re-injected. See [Skipping fonts](#skipping-fonts). |
 
 ## Deferring fonts
 
 By default `deferFonts: true` renders the `@font-face` `<style>` tag with `media="print" data-np-defer="1"` and emits a short inline script that swaps `media` to `"all"` once the rules are parsed. Lighthouse stops counting font-face declarations against "Eliminate render-blocking resources" without any visible regression — text above the fold paints with the system fallback (per `font-display: swap`) and re-paints with the web font as soon as it's downloaded, same as without the defer.
 
 Set `deferFonts={false}` if text above the fold uses glyphs that don't exist in any system fallback (icon fonts, custom symbol fonts), where rendering with the fallback would show `□` boxes instead of the intended character.
+
+## Skipping fonts
+
+`skipFonts: true` suppresses the `@font-face` `<style>` block entirely — no `<style id="nextpress-font-faces">` element, no swap-script. Use this when the host application already loads its own webfonts and doesn't need the WordPress-proxied declarations on the page. The canonical case is a Next.js app that loads matching families via [`next/font/google`](https://nextjs.org/docs/app/api-reference/components/font/google):
+
+```tsx
+import { Source_Serif_4, Onest } from 'next/font/google';
+
+const serif = Source_Serif_4({ subsets: ['latin'], variable: '--font-family-serif' });
+const sans  = Onest({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-family-sans' });
+
+export default function Layout({ children }) {
+  return (
+    <html className={`${serif.variable} ${sans.variable}`}>
+      <head>
+        <WPHead globalStyles={globalStyles} skipFonts /* ...other props */ />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+`skipFonts` takes precedence over `deferFonts`: when both are set, the block is skipped (not just deferred). Theme.json `stylesheet` content and `customCss` are still rendered — `skipFonts` only scopes to the font-face block.
 
 ## Deferring globalStyles
 

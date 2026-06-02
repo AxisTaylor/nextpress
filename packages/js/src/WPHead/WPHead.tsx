@@ -34,13 +34,19 @@ export interface WPHeadProps {
    * flash on first paint. Forwarded to `GlobalStyles`.
    */
   deferGlobalStyles?: boolean;
+  /**
+   * Suppress the WP `@font-face` block — set when the host app
+   * loads its own webfonts (e.g. via `next/font`). Forwarded to
+   * `GlobalStyles`. Takes precedence over `deferFonts`.
+   */
+  skipFonts?: boolean;
 }
 
 /**
  * Server component that renders all WordPress head assets: global styles,
  * stylesheets, the script module import map, and header scripts.
  */
-export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance = 'default', pathname = '', criticalHandles, deferFonts, deferGlobalStyles }: WPHeadProps) {
+export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance = 'default', pathname = '', criticalHandles, deferFonts, deferGlobalStyles, skipFonts }: WPHeadProps) {
   return (
     <>
       {stylesheets && stylesheets.length > 0 && (
@@ -58,6 +64,7 @@ export function WPHead({ scripts, stylesheets, globalStyles, importMap, instance
           pathname={pathname}
           deferFonts={deferFonts}
           deferGlobalStyles={deferGlobalStyles}
+          skipFonts={skipFonts}
         />
       )}
       {importMap && importMap.length > 0 && (

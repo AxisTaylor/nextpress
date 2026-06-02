@@ -26,6 +26,15 @@ export interface GlobalStylesProps {
    * `deferFonts` to lift both off the critical path.
    */
   deferGlobalStyles?: boolean;
+  /**
+   * Skip the WP `@font-face` block entirely. Set to `true` when the
+   * host app is loading its own webfonts (e.g. via `next/font`) and
+   * doesn't want the WP-proxied font-face declarations re-injected.
+   * Suppresses the `<style id="nextpress-font-faces">` element and
+   * the swap-script that would have flipped its media attribute.
+   * Takes precedence over `deferFonts`.
+   */
+  skipFonts?: boolean;
 }
 
 // Type loophole: `style[media]` is a valid HTML attribute but
@@ -62,6 +71,7 @@ export function GlobalStyles({
   pathname = '',
   deferFonts = true,
   deferGlobalStyles = false,
+  skipFonts = false,
 }: GlobalStylesProps) {
   const { stylesheet, customCss, renderedFontFaces } = globalStyles;
 
@@ -69,7 +79,7 @@ export function GlobalStyles({
   // its own <style> wrapper. Strip it so we can render cleanly, then
   // replace any NextPress proxy placeholders so font URLs route through
   // the proxy instead of hitting WordPress directly.
-  const fontFaceCss = renderedFontFaces
+  const fontFaceCss = !skipFonts && renderedFontFaces
     ? replaceProxyPlaceholders(
         renderedFontFaces
           .replace(/<style[^>]*>/gi, '')
