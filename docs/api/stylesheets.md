@@ -35,6 +35,44 @@ export default async function WordPressLayout({ children }) {
 | `stylesheets` | `EnqueuedStylesheet[]` | Yes | Array of WordPress stylesheets to render |
 | `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
 | `pathname` | `string` | No | Current page pathname for scoping |
+| `criticalHandles` | `string[]` | No | Handles to keep render-blocking (see [Critical handles](#critical-handles) below). Omit to keep all sheets blocking (legacy behaviour). |
+
+## Critical handles
+
+By default — when `criticalHandles` is omitted — every proxied stylesheet renders as a normal render-blocking `<link rel="stylesheet">`, which is what Lighthouse flags as "Eliminate render-blocking resources".
+
+Pass `criticalHandles` to whitelist the small set of stylesheets that genuinely need to paint above the fold (typically your theme stylesheet + `wp-block-library` + `wp-block-library-theme` + `global-styles`). Anything **not** in the whitelist gets the deferred treatment:
+
+1. `<link rel="stylesheet" href="…" media="print" data-np-defer="1" precedence="…">` — the browser fetches it at a non-render-blocking priority.
+2. An inline swap-script at the end of the stylesheets fragment promotes `media` to `"all"` on the `load` event (synchronously for cache hits via `link.sheet`).
+
+```tsx
+<Stylesheets
+  stylesheets={stylesheets}
+  criticalHandles={[
+    'wp-block-library',
+    'wp-block-library-theme',
+    'global-styles',
+    'classic-theme-styles',
+    'my-theme-style',          // your theme's main handle
+  ]}
+/>
+```
+
+### Trade-offs
+
+**Cascade order is preserved.** CSS cascade is decided by the DOM position of `<link>` / `<style>` elements, not load order. We keep DOM positions (via React 19's `precedence` prop), so once every deferred sheet has loaded + swapped to `media="all"`, the browser re-evaluates the cascade with the same precedence chain.
+
+**Transient FOUC on first visit.** Between First Contentful Paint and the deferred sheets finishing their `load` event (~50–500ms), only your critical sheets + the inline `before` / `after` chunks (which WordPress enqueues alongside each sheet) apply. Anything that exists **only** in a deferred sheet shows a flash of unstyled content. The `before` / `after` inlines usually cover CSS-custom-property bindings + block-supports CSS for above-the-fold elements, which is why the practical FOUC is small — but it's not zero.
+
+**Subsequent visits are FOUC-free.** Cache-hit deferred links have `link.sheet` populated synchronously when the swap-script runs, so the promotion happens before paint. Pairs nicely with an edge cache (Cloudflare, etc.) on proxied WP assets.
+
+### When to skip it
+
+Omitting `criticalHandles` keeps every sheet render-blocking — the previous default. Drop the prop if:
+- Your CSS budget is small enough that render-blocking isn't measurably hurting LCP.
+- You can't tolerate any transient FOUC (e.g. brand-critical content where the wrong fallback paint is worse than slower TTFB).
+- A specific sheet ships layout rules that aren't in any `before` / `after` inline counterpart — and you can't audit which one. In that case, easier to keep everything blocking than to debug FOUC.
 
 ## Placement
 

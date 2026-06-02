@@ -36,6 +36,18 @@ export default async function WordPressLayout({ children }) {
 | `globalStyles` | `GlobalStylesType \| null` | Yes | Payload from the `globalStyles` GraphQL query |
 | `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
 | `pathname` | `string` | No | Current page pathname; used when resolving proxy URL placeholders in font-face rules |
+| `deferFonts` | `boolean` | No | Defer the `@font-face` block off the critical path. Default `true`. See [Deferring fonts](#deferring-fonts). |
+| `deferGlobalStyles` | `boolean` | No | Defer the theme.json `stylesheet` content. Default `false` — opt in only when you can absorb a token-flash on first paint. |
+
+## Deferring fonts
+
+By default `deferFonts: true` renders the `@font-face` `<style>` tag with `media="print" data-np-defer="1"` and emits a short inline script that swaps `media` to `"all"` once the rules are parsed. Lighthouse stops counting font-face declarations against "Eliminate render-blocking resources" without any visible regression — text above the fold paints with the system fallback (per `font-display: swap`) and re-paints with the web font as soon as it's downloaded, same as without the defer.
+
+Set `deferFonts={false}` if text above the fold uses glyphs that don't exist in any system fallback (icon fonts, custom symbol fonts), where rendering with the fallback would show `□` boxes instead of the intended character.
+
+## Deferring globalStyles
+
+`deferGlobalStyles: false` (the default) keeps the theme.json `stylesheet` content (CSS custom property bindings + base block-supports rules) on the critical path. Set to `true` only when you can absorb a token-flash on first paint — for example, when the application chrome paints its own values via your design system before any WordPress block is visible.
 
 ## GraphQL Query
 

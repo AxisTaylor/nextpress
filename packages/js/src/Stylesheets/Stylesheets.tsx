@@ -19,14 +19,20 @@ export interface StyleProps {
 
 const Style = 'style' as unknown as FC<StyleProps>;
 
-// Promotes every `data-np-defer` link from a non-matching
-// `media="print"` to `media="all"` once the stylesheet has loaded.
-// Print-media links don't block first paint; promoting them on
-// `load` applies the styles without a second fetch (the browser
-// reuses the print sheet). Cache-hit links arrive with `.sheet`
-// already populated and no `load` event coming, so we promote
-// those synchronously.
-const DEFER_SWAP_SCRIPT = "(function(){function s(l){l.media='all';}document.querySelectorAll('link[data-np-defer]').forEach(function(l){if(l.sheet){s(l);}else{l.addEventListener('load',function(){s(l);},{once:true});}});})();";
+// Promotes every `data-np-defer` element from `media="print"` to
+// `media="all"` once its stylesheet has loaded.
+//
+// Two element types ride through the same swap:
+//   * `<link rel="stylesheet" media="print">` — print-media stops
+//     the request from blocking first paint. Promoting on `load`
+//     reuses the print sheet (no second fetch). Cache hits arrive
+//     with `.sheet` populated and no `load` event coming, so we
+//     promote those synchronously.
+//   * `<style media="print">` — inline rules (font faces are the
+//     primary case). `.sheet` is populated synchronously on parse,
+//     so we just check it and promote — no load event ever fires
+//     for an inline `<style>`.
+const DEFER_SWAP_SCRIPT = "(function(){function s(l){l.media='all';}document.querySelectorAll('link[data-np-defer],style[data-np-defer]').forEach(function(l){if(l.sheet){s(l);}else{l.addEventListener('load',function(){s(l);},{once:true});}});})();";
 
 export type StylesheetsProps = {
   stylesheets: EnqueuedStylesheet[];
