@@ -47,10 +47,39 @@ export default async function WordPressLayout({ children }) {
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `scripts` | `EnqueuedScript[]` | Yes | Array of WordPress scripts to render |
-| `globalStyles` | `GlobalStylesType \| null` | No | WordPress global styles (theme.json stylesheet, custom CSS, font faces) |
+| `stylesheets` | `EnqueuedStylesheet[]` | No | Per-page WordPress stylesheets. Forwarded to [`Stylesheets`](./stylesheets.md). |
+| `globalStyles` | `GlobalStylesType \| null` | No | WordPress global styles (theme.json stylesheet, custom CSS, font faces). Forwarded to [`GlobalStyles`](./global-styles.md). |
 | `importMap` | `WPImport[]` | No | Import map entries for script modules (`@wordpress/interactivity`, etc.) |
 | `instance` | `string` | No | WordPress instance slug (default: `'default'`) |
 | `pathname` | `string` | No | Current page pathname |
+| `criticalHandles` | `string[]` | No | Stylesheet handles to keep render-blocking; everything else is deferred via `media="print"` + swap-on-load. Forwarded to [`Stylesheets`](./stylesheets.md#critical-handles). Omit to keep all sheets blocking. |
+| `deferFonts` | `boolean` | No | Defer the theme.json `@font-face` block off the critical path. Default `true`. Forwarded to [`GlobalStyles`](./global-styles.md#deferring-fonts). |
+| `deferGlobalStyles` | `boolean` | No | Defer the theme.json `stylesheet` content. Default `false`. Forwarded to [`GlobalStyles`](./global-styles.md#deferring-globalstyles). |
+
+## Render-blocking budget
+
+The three defer-related props above are all opt-in tuning knobs against Lighthouse's "Eliminate render-blocking resources" audit. Reasonable starting configuration for a typical content site:
+
+```tsx
+<WPHead
+  scripts={scripts}
+  stylesheets={stylesheets}
+  globalStyles={globalStyles}
+  importMap={importMap}
+  pathname={uri}
+  criticalHandles={[
+    'wp-block-library',
+    'wp-block-library-theme',
+    'global-styles',
+    'classic-theme-styles',
+    'my-theme-style',
+  ]}
+  // deferFonts: true (default)
+  // deferGlobalStyles: false (default)
+/>
+```
+
+That keeps the WP core block library + your theme stylesheet on the critical path while deferring every WC-Blocks / plugin-specific stylesheet, and lifts `@font-face` declarations out of the way too. See the linked component docs for trade-offs and the FOUC profile.
 
 ## What It Renders
 
