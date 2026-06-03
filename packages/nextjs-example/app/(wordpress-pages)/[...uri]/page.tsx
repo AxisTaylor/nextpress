@@ -37,7 +37,7 @@ export default async function Page({ params: paramsPromise }: PageParams) {
       content={data.content}
       contentCssClasses={data.contentCssClasses}
       linksAs={Link as unknown as FC<JSX.IntrinsicElements['a']>}
-      parsers={[nextImageParser]}
+      parsers={[nextImageParser()]}
     />
   );
 }

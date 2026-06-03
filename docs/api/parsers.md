@@ -16,7 +16,7 @@ import { Content, nextImageParser } from '@axistaylor/nextpress';
 
 <Content
   content={wpContent}
-  parsers={[nextImageParser]}
+  parsers={[nextImageParser()]}
 />
 ```
 
@@ -25,7 +25,7 @@ Multiple parsers run in order:
 ```tsx
 <Content
   content={wpContent}
-  parsers={[nextImageParser, myCustomParser]}
+  parsers={[nextImageParser(), myCustomParser]}
 />
 ```
 
@@ -35,22 +35,72 @@ Multiple parsers run in order:
 
 **Import:** `import { nextImageParser } from '@axistaylor/nextpress'`
 
-Converts WordPress `<img>` tags to Next.js `<Image>` components for automatic WebP/AVIF optimization and responsive srcset generation.
+Factory that returns a parser converting WordPress `<img>` tags into Next.js `<Image>` components for automatic WebP/AVIF optimization and responsive srcset generation.
 
-- Passes intrinsic `width`/`height` for aspect ratio
-- Passes WordPress's `sizes` attribute for responsive srcset selection
-- Preserves `className`, `style`, and `data-*` attributes
-- Skips images without `width`/`height` (leaves them as native `<img>`)
+- Resolves the matching WordPress instance via [`getWPInstance`](#getwpinstanceslug) / [`getAllWPInstances`](#getallwpinstances) and rewrites same-host `<img>` src values through the NextPress asset proxy (`/atx/{slug}/wp-assets/...`). Consumers don't need to configure [`images.remotePatterns`](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) for their WordPress origin.
+- Cross-origin images (CDNs, external embeds) pass through unchanged.
+- Converts WordPress `<img>` attributes into a Next.js `Image`-compatible prop shape via [`toImageProps`](#toimagepropsattrs-src) — `width`, `height`, `sizes`, `loading`, `fetchPriority` → `priority`, `crossOrigin`, `referrerPolicy`, `data-*`, plus pass-through of `className`, `style`, `title`, and `id`.
+- Skips images without `width`/`height` (leaves them as native `<img>`).
 
 ```tsx
 import { Content, nextImageParser } from '@axistaylor/nextpress';
 
 export default function Page({ content }) {
-  return <Content content={content} parsers={[nextImageParser]} />;
+  return <Content content={content} parsers={[nextImageParser({ instance: 'default' })]} />;
 }
 ```
 
-> **Note:** `nextImageParser` imports from `next/image` which is a client component, so it must be imported from `@axistaylor/nextpress/client`. Your Next.js config must include [`remotePatterns`](https://nextjs.org/docs/app/api-reference/components/image#remotepatterns) for your WordPress domain.
+#### Options (`NextImageParserOptions`)
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `instance` | `string` | `'default'` | The `withWCR` instance slug to resolve src URLs against. The matching instance's `wpHomeUrl` decides what's "same-host" (proxied) vs external (passed through). |
+| `render` | `ComponentType<ImageProps>` | `next/image`'s `Image` | Component the parser renders for each matched `<img>`. Receives the converted `ImageProps`. Use this to wrap or replace `<Image>` with your own component — e.g. one that applies app-wide image styling — without losing the proxy / prop-conversion behaviour. |
+
+#### Curating a parser with a custom render component
+
+The `render` prop is the recommended way to centralize image presentation. Anything the consumer wants every WP image to ship with — rounded corners, default `sizes`, a blur placeholder strategy, an overlay click handler, etc. — lives once on the wrapping component:
+
+```tsx
+import Image, { type ImageProps } from 'next/image';
+import { nextImageParser } from '@axistaylor/nextpress';
+
+function ArticleImage(props: ImageProps) {
+  return (
+    <Image
+      {...props}
+      className={`rounded-xl shadow-md ${props.className ?? ''}`}
+      sizes={props.sizes ?? '(min-width: 768px) 720px, 100vw'}
+    />
+  );
+}
+
+const articleImageParser = nextImageParser({
+  instance: 'default',
+  render: ArticleImage,
+});
+
+<Content content={post.content} parsers={[articleImageParser]} />
+```
+
+### `toImageProps(attrs, src)`
+
+**Import:** `import { toImageProps } from '@axistaylor/nextpress'`
+
+Pure helper that converts an `<img>` element's parsed `attributesToProps` output into a [`next/image` `ImageProps`](https://nextjs.org/docs/app/api-reference/components/image) object using the supplied `src`. Returns `null` when the attribute set is missing `width`/`height`. Re-use this if you're writing a fully custom image parser but still want the attribute-mapping behaviour the built-in parser provides.
+
+```ts
+import type { CustomParser } from '@axistaylor/nextpress';
+import { toImageProps } from '@axistaylor/nextpress';
+
+const myImageParser: CustomParser = (node, attrs) => {
+  if ((node as { name?: string }).name !== 'img') return undefined;
+  const src = (attrs as Record<string, unknown>).src as string;
+  const props = toImageProps(attrs, src);
+  if (!props) return undefined;
+  return <MyImage {...props} />;
+};
+```
 
 ### `createUrlRewritingParser`
 
