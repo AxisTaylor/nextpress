@@ -6,6 +6,7 @@ import { transformAssetUrl, isBypassedHost } from '@/utils/url';
 import { firePageEvents } from '@/hooks/usePageEvents';
 import { joinScriptContent } from '@/utils/content';
 import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
+import { startPlaceholderObserver } from './placeholderObserver';
 
 export interface AssetData {
   stylesheets: EnqueuedStylesheet[];
@@ -432,6 +433,14 @@ export function AssetUpdater({
   fetchAssets,
   bypassDomains = [],
 }: AssetUpdaterProps) {
+  // Watch the DOM for `__NEXTPRESS_*` placeholders in element attribute
+  // values and rewrite them to proxy values on every mutation. Lives in
+  // its own effect so a navigation that re-runs the asset-fetch effect
+  // below doesn't tear down the observer mid-flight.
+  useEffect(() => {
+    return startPlaceholderObserver(instance, pathname);
+  }, [instance, pathname]);
+
   // Skip only the initial mount — the server already rendered those assets.
   // Every effect run after the first one (including returning to the initial
   // pathname) re-fetches and re-applies assets.
