@@ -1,5 +1,11 @@
 # @axistaylor/nextpress
 
+## 1.8.1
+
+### Patch Changes
+
+- [#71](https://github.com/AxisTaylor/nextpress/pull/71) [`4ba30c2`](https://github.com/AxisTaylor/nextpress/commit/4ba30c2505d3dfb76cc70596be0eed3419ce2698) Thanks [@kidunot89](https://github.com/kidunot89)! - `AssetUpdater` now runs a `MutationObserver` that resolves `__NEXTPRESS_*` placeholders found in element attribute values everywhere in the document — covering both the initial server-rendered tree and any DOM that gets inserted or attribute-mutated after mount. Scoped to attribute values only (text content and characterData mutations are not processed) and short-circuits on a substring guard before touching the regex path, so per-mutation overhead is small. Disconnects cleanly on unmount or when `instance` / `pathname` change.
+
 ## 1.8.0
 
 ### Minor Changes
