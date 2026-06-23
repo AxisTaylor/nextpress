@@ -15,18 +15,19 @@ Because route-group `layout.tsx` files do **not** re-render on client-side navig
 
 ```tsx
 // components/AssetUpdater.tsx
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
+import { usePathname } from "next/navigation";
 import {
   AssetUpdater as BaseAssetUpdater,
   AssetData,
-} from '@axistaylor/nextpress/client';
+} from "@axistaylor/nextpress/client";
 
 export interface AssetUpdaterProps {
   fetchAssets: (uri: string) => Promise<AssetData>;
   instance?: string;
   bypassDomains?: string[];
+  reinitBypassHandles?: string[];
 }
 
 export function AssetUpdater(props: AssetUpdaterProps) {
@@ -36,6 +37,7 @@ export function AssetUpdater(props: AssetUpdaterProps) {
       fetchAssets={props.fetchAssets}
       instance={props.instance}
       bypassDomains={props.bypassDomains}
+      reinitBypassHandles={props.reinitBypassHandles}
       pathname={pathname}
     />
   );
@@ -46,13 +48,13 @@ Then use the wrapper in your WordPress layout:
 
 ```tsx
 // app/(wordpress-pages)/layout.tsx
-import { WPHead, WPFooter } from '@axistaylor/nextpress';
-import { AssetUpdater } from '@/components/AssetUpdater';
-import { fetchAssets } from '@/actions/fetchAssets';
-import { headers } from 'next/headers';
+import { WPHead, WPFooter } from "@axistaylor/nextpress";
+import { AssetUpdater } from "@/components/AssetUpdater";
+import { fetchAssets } from "@/actions/fetchAssets";
+import { headers } from "next/headers";
 
 export default async function WordPressLayout({ children }) {
-  const uri = (await headers()).get('x-uri') || '/';
+  const uri = (await headers()).get("x-uri") || "/";
   // …fetch stylesheets, scripts, importMap, globalStyles for initial SSR…
 
   return (
@@ -79,10 +81,10 @@ export default async function WordPressLayout({ children }) {
 
 ```ts
 // actions/fetchAssets.ts
-'use server';
+"use server";
 
-import type { AssetData } from '@axistaylor/nextpress/client';
-import { fetchStylesAndScriptsByUri, fetchGlobalStyles } from '@/lib/wordpress';
+import type { AssetData } from "@axistaylor/nextpress/client";
+import { fetchStylesAndScriptsByUri, fetchGlobalStyles } from "@/lib/wordpress";
 
 export async function fetchAssets(uri: string): Promise<AssetData> {
   const [{ stylesheets, scripts }, globalStyles] = await Promise.all([
@@ -99,12 +101,13 @@ export async function fetchAssets(uri: string): Promise<AssetData> {
 
 ## Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `pathname` | `string` | Yes | The current pathname being rendered (usually sourced from `headers().get('x-uri')`) |
-| `fetchAssets` | `(uri: string) => Promise<AssetData>` | Yes | Server action that returns fresh stylesheets, scripts, and global styles for a URI |
-| `instance` | `string` | No | WordPress instance slug used for proxy URL rewriting (default: `'default'`) |
-| `bypassDomains` | `string[]` | No | Domains whose scripts/stylesheets load directly from their original URL instead of being proxied — e.g. `['js.stripe.com', 'fonts.googleapis.com']`. Matched by hostname; a root domain covers its subdomains (`stripe.com` covers `js.stripe.com`). Default: `[]` |
+| Prop                  | Type                                  | Required | Description                                                                                                                                                                                                                                                        |
+| --------------------- | ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pathname`            | `string`                              | Yes      | The current pathname being rendered (usually sourced from `headers().get('x-uri')`)                                                                                                                                                                                |
+| `fetchAssets`         | `(uri: string) => Promise<AssetData>` | Yes      | Server action that returns fresh stylesheets, scripts, and global styles for a URI                                                                                                                                                                                 |
+| `instance`            | `string`                              | No       | WordPress instance slug used for proxy URL rewriting (default: `'default'`)                                                                                                                                                                                        |
+| `bypassDomains`       | `string[]`                            | No       | Domains whose scripts/stylesheets load directly from their original URL instead of being proxied — e.g. `['js.stripe.com', 'fonts.googleapis.com']`. Matched by hostname; a root domain covers its subdomains (`stripe.com` covers `js.stripe.com`). Default: `[]` |
+| `reinitBypassHandles` | `string[]`                            | No       | Script handles to load once and **skip re-running** on client-side navigation. See [Script re-execution on navigation](#script-re-execution-on-navigation). Default: `[]`                                                                                          |
 
 ### `AssetData`
 
@@ -120,11 +123,11 @@ type AssetData = {
 
 `AssetUpdater` relies on marker tags emitted by the server components:
 
-| Markers | Owner |
-|---------|-------|
-| `nextpress-stylesheets-start` / `nextpress-stylesheets-end` | `<Stylesheets>` |
-| `nextpress-head-scripts-start` / `nextpress-head-scripts-end` | `<WPHead>` |
-| `nextpress-body-scripts-start` / `nextpress-body-scripts-end` | `<WPFooter>` |
+| Markers                                                       | Owner           |
+| ------------------------------------------------------------- | --------------- |
+| `nextpress-stylesheets-start` / `nextpress-stylesheets-end`   | `<Stylesheets>` |
+| `nextpress-head-scripts-start` / `nextpress-head-scripts-end` | `<WPHead>`      |
+| `nextpress-body-scripts-start` / `nextpress-body-scripts-end` | `<WPFooter>`    |
 
 On initial mount the effect is skipped (the server already rendered those assets). On every subsequent navigation the effect:
 
@@ -143,13 +146,13 @@ Pass `bypassDomains` to keep those assets on their original URL:
 ```tsx
 <AssetUpdater
   fetchAssets={fetchAssets}
-  bypassDomains={['js.stripe.com', 'fonts.googleapis.com', 'fonts.gstatic.com']}
+  bypassDomains={["js.stripe.com", "fonts.googleapis.com", "fonts.gstatic.com"]}
 />
 ```
 
 Matching is by **hostname** (scheme- and port-agnostic), and a root domain covers its subdomains — `stripe.com` matches both `stripe.com` and `js.stripe.com`.
 
-Keep this list aligned with the external origins your server-side asset rendering already emits directly: the server marks non-WordPress origins as external and renders their raw URLs, and `bypassDomains` is how the client reproduces that decision on navigation. When they agree, the initial SSR markup and the navigation-time markup match — including the external-script dedupe key — so third-party scripts aren't re-run.
+Keep this list aligned with the external origins your server-side asset rendering already emits directly: the server marks non-WordPress origins as external and renders their raw URLs, and `bypassDomains` is how the client reproduces that decision on navigation. When they agree, the initial SSR markup and the navigation-time markup match. `bypassDomains` only controls the asset _URL_; whether a script re-runs on navigation is governed separately by [`reinitBypassHandles`](#script-re-execution-on-navigation) — add a third-party handle there too if its IIFE is non-idempotent.
 
 ## Inline Script Synchronization
 
@@ -159,21 +162,50 @@ The built-in follow-up is for WooCommerce:
 
 - After the `wc-settings-js-before` inline script runs (which defines `window.wcSettings` for the new page), `processWcSettings(instance)` is invoked to resolve the `__NEXTPRESS_PROXY__` / `__NEXTPRESS_ASSETS__` placeholders inside the freshly-loaded settings object. Without this, cart and checkout blocks can get stuck in their skeleton state on client-side navigation because their Store API URLs still point at raw `__NEXTPRESS_*__` placeholders.
 
+## Script re-execution on navigation
+
+On each navigation `AssetUpdater` re-inserts the page's `<script>` elements, so every script **re-executes** for the new content. This is deliberate: WordPress view scripts conventionally initialize with the standard ready-check
+
+```js
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+```
+
+On a fresh load `init()` runs on `DOMContentLoaded`. On a client-side navigation the document is already `complete`, so a re-evaluated script takes the `else` branch and re-runs `init()` against the new DOM — no SPA-specific code in the block. (`AssetUpdater` also fires synthetic `DOMContentLoaded`, `load`, and `nextpress:page-change` events for scripts that instead attach a listener.) Authors get correct behavior on navigation for free, whichever convention they use.
+
+### `reinitBypassHandles`
+
+Re-execution is unsafe for scripts whose top-level code isn't idempotent. The canonical case is `customElements.define()`, which throws `NotSupportedError` on a second call for the same tag name and aborts the rest of that script — e.g. WooCommerce's `wc-order-attribution`.
+
+List such handles in `reinitBypassHandles`; they load once and are skipped on every later navigation:
+
+```tsx
+<AssetUpdater
+  fetchAssets={fetchAssets}
+  reinitBypassHandles={["wc-order-attribution"]}
+/>
+```
+
+NextPress ships no handles in this list by default — it never branches on handle names itself; each app declares the scripts it knows to be non-idempotent.
+
 ## Navigation Behavior
 
-| Mount state | Effect runs? | Notes |
-|-------------|--------------|-------|
-| Initial SSR hydration | No | The server already rendered the markup |
-| Navigating to a new URI | Yes | Full refresh |
-| Revisiting the initial URI | Yes | Assets re-fetched — stays in sync with any backend changes |
+| Mount state                | Effect runs? | Notes                                                      |
+| -------------------------- | ------------ | ---------------------------------------------------------- |
+| Initial SSR hydration      | No           | The server already rendered the markup                     |
+| Navigating to a new URI    | Yes          | Full refresh                                               |
+| Revisiting the initial URI | Yes          | Assets re-fetched — stays in sync with any backend changes |
 
 ## Client Component
 
 `AssetUpdater` is a React Client Component. Import it from the client entrypoint if you need the explicit client path (otherwise it's re-exported from `@axistaylor/nextpress` directly):
 
 ```tsx
-import { AssetUpdater } from '@axistaylor/nextpress/client';
-import type { AssetData } from '@axistaylor/nextpress/client';
+import { AssetUpdater } from "@axistaylor/nextpress/client";
+import type { AssetData } from "@axistaylor/nextpress/client";
 ```
 
 ## Related

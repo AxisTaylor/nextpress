@@ -1,12 +1,21 @@
-import { useEffect, useRef } from 'react';
-import { EnqueuedScript, EnqueuedStylesheet, GlobalStylesType, ScriptLoadingGroupEnum, ScriptTypeEnum } from '@/types';
-import { WPImport } from '@/ImportMap';
-import { scopeInlineStyles } from '@/utils/scopeStyles';
-import { transformAssetUrl, isBypassedHost } from '@/utils/url';
-import { firePageEvents } from '@/hooks/usePageEvents';
-import { joinScriptContent } from '@/utils/content';
-import { replaceProxyPlaceholders, processWcSettings } from '@/compatibility/woocommerce';
-import { startPlaceholderObserver } from './placeholderObserver';
+import { useEffect, useRef } from "react";
+import {
+  EnqueuedScript,
+  EnqueuedStylesheet,
+  GlobalStylesType,
+  ScriptLoadingGroupEnum,
+  ScriptTypeEnum,
+} from "@/types";
+import { WPImport } from "@/ImportMap";
+import { scopeInlineStyles } from "@/utils/scopeStyles";
+import { transformAssetUrl, isBypassedHost } from "@/utils/url";
+import { firePageEvents } from "@/hooks/usePageEvents";
+import { joinScriptContent } from "@/utils/content";
+import {
+  replaceProxyPlaceholders,
+  processWcSettings,
+} from "@/compatibility/woocommerce";
+import { startPlaceholderObserver } from "./placeholderObserver";
 
 export interface AssetData {
   stylesheets: EnqueuedStylesheet[];
@@ -15,30 +24,23 @@ export interface AssetData {
   importMap?: WPImport[] | null;
 }
 
-/**
- * External script srcs already loaded in this browser session. Removing
- * a `<script>` element from the DOM does NOT undo its side effects — any
- * globals it defined and any `customElements.define()` calls it made
- * persist. Re-inserting the same external src on the next navigation
- * therefore re-runs the IIFE and breaks anything non-idempotent
- * (e.g. wc-order-attribution throws `NotSupportedError: the name
- * "wc-order-attribution-inputs" has already been used`).
- *
- * Session-scoped (lives for the lifetime of the page) so navigation
- * between many WP-instance pages doesn't accumulate forever in practice.
- * Cleared automatically on full page reload.
- */
-const loadedExternalSrcs = new Set<string>();
+/** Resolved srcs of `reinitBypassHandles` scripts already loaded this session. */
+const loadedBypassedSrcs = new Set<string>();
 
 /**
  * Resolves an asset src to load: assets whose host is (or is a subdomain of)
  * a bypassed domain keep their original external URL; everything else is
  * routed through the instance asset proxy.
  */
-function resolveAssetSrc(src: string, instance: string, bypassDomains: string[]): string {
-  return isBypassedHost(src, bypassDomains) ? src : transformAssetUrl(src, instance);
+function resolveAssetSrc(
+  src: string,
+  instance: string,
+  bypassDomains: string[]
+): string {
+  return isBypassedHost(src, bypassDomains)
+    ? src
+    : transformAssetUrl(src, instance);
 }
-
 
 export interface AssetUpdaterProps {
   /**
@@ -63,6 +65,11 @@ export interface AssetUpdaterProps {
    * root domains covering subdomains (`stripe.com` covers `js.stripe.com`).
    */
   bypassDomains?: string[];
+  /**
+   * Script handles to load once and skip re-running on client navigation.
+   * See docs/api/asset-updater.md ("Script re-execution on navigation").
+   */
+  reinitBypassHandles?: string[];
 }
 
 /**
@@ -71,7 +78,7 @@ export interface AssetUpdaterProps {
  */
 function clearBetweenMarkers(
   startId: string,
-  endId: string,
+  endId: string
 ): { parent: HTMLElement; endMarker: HTMLElement } | null {
   const startMarker = document.getElementById(startId);
   const endMarker = document.getElementById(endId);
@@ -98,7 +105,7 @@ function clearBetweenMarkers(
  * Creates a <style> element with the given id and CSS content.
  */
 function createStyleElement(id: string, css: string): HTMLStyleElement {
-  const el = document.createElement('style');
+  const el = document.createElement("style");
   el.id = id;
   el.textContent = css;
   return el;
@@ -108,9 +115,9 @@ function createStyleElement(id: string, css: string): HTMLStyleElement {
  * Creates a <link rel="stylesheet"> element with the given id and href.
  */
 function createLinkElement(id: string, href: string): HTMLLinkElement {
-  const el = document.createElement('link');
+  const el = document.createElement("link");
   el.id = id;
-  el.rel = 'stylesheet';
+  el.rel = "stylesheet";
   el.href = href;
   return el;
 }
@@ -124,13 +131,13 @@ function createLinkElement(id: string, href: string): HTMLLinkElement {
  */
 function createScriptElement(
   id: string,
-  options: { src?: string; content?: string; isModule?: boolean },
+  options: { src?: string; content?: string; isModule?: boolean }
 ): { el: HTMLScriptElement; loaded: Promise<void> } {
-  const el = document.createElement('script');
+  const el = document.createElement("script");
   el.id = id;
 
   if (options.isModule) {
-    el.type = 'module';
+    el.type = "module";
   }
 
   let loaded: Promise<void>;
@@ -141,8 +148,8 @@ function createScriptElement(
       el.async = false;
     }
     loaded = new Promise<void>((resolve) => {
-      el.addEventListener('load', () => resolve(), { once: true });
-      el.addEventListener('error', () => resolve(), { once: true });
+      el.addEventListener("load", () => resolve(), { once: true });
+      el.addEventListener("error", () => resolve(), { once: true });
     });
     el.src = options.src;
   } else if (options.content) {
@@ -158,10 +165,14 @@ function createScriptElement(
 /**
  * Replaces the stylesheet list between the nextpress-stylesheets-start/end markers.
  */
-function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, bypassDomains: string[]): void {
+function updateStylesheets(
+  stylesheets: EnqueuedStylesheet[],
+  instance: string,
+  bypassDomains: string[]
+): void {
   const range = clearBetweenMarkers(
-    'nextpress-stylesheets-start',
-    'nextpress-stylesheets-end',
+    "nextpress-stylesheets-start",
+    "nextpress-stylesheets-end"
   );
   if (!range) return;
 
@@ -175,16 +186,19 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, 
       parent.insertBefore(
         createStyleElement(
           `${handle}-before`,
-          scopeInlineStyles(joinScriptContent(stylesheet.before)),
+          scopeInlineStyles(joinScriptContent(stylesheet.before))
         ),
-        endMarker,
+        endMarker
       );
     }
 
     if (stylesheet.src) {
       parent.insertBefore(
-        createLinkElement(handle, resolveAssetSrc(stylesheet.src, instance, bypassDomains)),
-        endMarker,
+        createLinkElement(
+          handle,
+          resolveAssetSrc(stylesheet.src, instance, bypassDomains)
+        ),
+        endMarker
       );
     }
 
@@ -192,9 +206,9 @@ function updateStylesheets(stylesheets: EnqueuedStylesheet[], instance: string, 
       parent.insertBefore(
         createStyleElement(
           `${handle}-inline-css`,
-          scopeInlineStyles(joinScriptContent(stylesheet.after)),
+          scopeInlineStyles(joinScriptContent(stylesheet.after))
         ),
-        endMarker,
+        endMarker
       );
     }
   });
@@ -211,22 +225,19 @@ async function updateScripts(
   instance: string,
   pathname: string,
   bypassDomains: string[],
+  reinitBypassHandles: string[]
 ): Promise<void> {
-  // Seed the dedupe set from scripts currently between the markers
-  // before clearing. Server-rendered scripts (initial page load) and
-  // scripts inserted by a previous AssetUpdater run have both already
-  // executed — their side effects are in JS land regardless of whether
-  // their <script> element still exists in the DOM. Comparing on the
-  // raw src attribute matches how we insert new scripts below.
+  // Seed from scripts already in the DOM so bypassed handles rendered on the
+  // initial page are recognized as loaded on the first navigation.
   const startSeed = document.getElementById(startId);
   const endSeed = document.getElementById(endId);
   if (startSeed && endSeed) {
     let node: ChildNode | null = startSeed.nextSibling;
     while (node && node !== endSeed) {
       if (node instanceof HTMLScriptElement) {
-        const seedSrc = node.getAttribute('src');
+        const seedSrc = node.getAttribute("src");
         if (seedSrc) {
-          loadedExternalSrcs.add(seedSrc);
+          loadedBypassedSrcs.add(seedSrc);
         }
       }
       node = node.nextSibling;
@@ -245,7 +256,7 @@ async function updateScripts(
   // defined by previous external scripts.
   const insert = async (
     id: string,
-    options: { src?: string; content?: string; isModule?: boolean },
+    options: { src?: string; content?: string; isModule?: boolean }
   ): Promise<void> => {
     const { el, loaded } = createScriptElement(id, options);
     parent.insertBefore(el, endMarker);
@@ -262,10 +273,12 @@ async function updateScripts(
   const insertInlineAndAwait = async (
     id: string,
     content: string,
-    onExecuted?: () => void,
+    onExecuted?: () => void
   ): Promise<void> => {
     const eventName = `nextpress:inline-executed:${id}`;
-    const instrumented = `${content}\n;document.dispatchEvent(new CustomEvent(${JSON.stringify(eventName)}));`;
+    const instrumented = `${content}\n;document.dispatchEvent(new CustomEvent(${JSON.stringify(
+      eventName
+    )}));`;
     const executed = new Promise<void>((resolve) => {
       document.addEventListener(eventName, () => resolve(), { once: true });
     });
@@ -283,15 +296,24 @@ async function updateScripts(
     if (!handle) continue;
 
     const isModule = String(script.type) === ScriptTypeEnum.MODULE;
+    const resolvedSrc = script.src
+      ? resolveAssetSrc(script.src, instance, bypassDomains)
+      : "";
+
+    // Bypassed handles load once and are skipped on later navigations.
+    if (reinitBypassHandles.includes(String(handle))) {
+      if (resolvedSrc && loadedBypassedSrcs.has(resolvedSrc)) {
+        continue;
+      }
+      if (resolvedSrc) {
+        loadedBypassedSrcs.add(resolvedSrc);
+      }
+    }
 
     // ES modules don't have inline extra/before/after scripts — just load the src.
     if (isModule) {
-      if (script.src) {
-        const src = resolveAssetSrc(script.src, instance, bypassDomains);
-        if (!loadedExternalSrcs.has(src)) {
-          loadedExternalSrcs.add(src);
-          await insert(handle, { src, isModule: true });
-        }
+      if (resolvedSrc) {
+        await insert(handle, { src: resolvedSrc, isModule: true });
       }
       continue;
     }
@@ -309,18 +331,12 @@ async function updateScripts(
       await insertInlineAndAwait(
         `${handle}-js-before`,
         beforeScript,
-        handle === 'wc-settings'
-          ? () => processWcSettings(instance)
-          : undefined,
+        handle === "wc-settings" ? () => processWcSettings(instance) : undefined
       );
     }
 
-    if (script.src) {
-      const src = resolveAssetSrc(script.src, instance, bypassDomains);
-      if (!loadedExternalSrcs.has(src)) {
-        loadedExternalSrcs.add(src);
-        await insert(handle, { src });
-      }
+    if (resolvedSrc) {
+      await insert(handle, { src: resolvedSrc });
     }
 
     const afterScript = joinScriptContent(script.after);
@@ -336,7 +352,7 @@ async function updateScripts(
 function updateGlobalStyles(
   globalStyles: GlobalStylesType | null | undefined,
   instance: string,
-  pathname: string,
+  pathname: string
 ): void {
   const existing = document.querySelectorAll('[data-nextpress="global"]');
   existing.forEach((el) => el.parentElement?.removeChild(el));
@@ -348,41 +364,44 @@ function updateGlobalStyles(
   // Re-register the wp-theme layer on every navigation so theme.json
   // globalStyles stay below proxied CSS and unlayered author rules in
   // the cascade after the previous declaration is torn down.
-  const layerOrder = createStyleElement('nextpress-layer-order', '@layer wp-theme;');
-  layerOrder.setAttribute('data-nextpress', 'global');
+  const layerOrder = createStyleElement(
+    "nextpress-layer-order",
+    "@layer wp-theme;"
+  );
+  layerOrder.setAttribute("data-nextpress", "global");
   head.appendChild(layerOrder);
 
   if (globalStyles.renderedFontFaces) {
     const fontFaceCss = replaceProxyPlaceholders(
       globalStyles.renderedFontFaces
-        .replace(/<style[^>]*>/gi, '')
-        .replace(/<\/style>/gi, '')
+        .replace(/<style[^>]*>/gi, "")
+        .replace(/<\/style>/gi, "")
         .trim(),
       instance,
-      pathname,
+      pathname
     );
     if (fontFaceCss) {
-      const el = createStyleElement('nextpress-font-faces', fontFaceCss);
-      el.setAttribute('data-nextpress', 'global');
+      const el = createStyleElement("nextpress-font-faces", fontFaceCss);
+      el.setAttribute("data-nextpress", "global");
       head.appendChild(el);
     }
   }
 
   if (globalStyles.stylesheet) {
     const el = createStyleElement(
-      'nextpress-global-styles',
-      scopeInlineStyles(globalStyles.stylesheet, { layer: 'wp-theme' }),
+      "nextpress-global-styles",
+      scopeInlineStyles(globalStyles.stylesheet, { layer: "wp-theme" })
     );
-    el.setAttribute('data-nextpress', 'global');
+    el.setAttribute("data-nextpress", "global");
     head.appendChild(el);
   }
 
   if (globalStyles.customCss) {
     const el = createStyleElement(
-      'nextpress-custom-css',
-      scopeInlineStyles(globalStyles.customCss, { layer: 'wp-theme' }),
+      "nextpress-custom-css",
+      scopeInlineStyles(globalStyles.customCss, { layer: "wp-theme" })
     );
-    el.setAttribute('data-nextpress', 'global');
+    el.setAttribute("data-nextpress", "global");
     head.appendChild(el);
   }
 }
@@ -395,9 +414,9 @@ function updateGlobalStyles(
 function updateImportMap(
   imports: WPImport[] | null | undefined,
   instance: string,
-  pathname: string,
+  pathname: string
 ): void {
-  const existing = document.getElementById('wp-importmap');
+  const existing = document.getElementById("wp-importmap");
   if (existing) {
     existing.parentElement?.removeChild(existing);
   }
@@ -410,13 +429,12 @@ function updateImportMap(
     map[entry.name] = transformAssetUrl(entry.path, instance);
   }
 
-  const el = document.createElement('script');
-  el.type = 'importmap';
-  el.id = 'wp-importmap';
+  const el = document.createElement("script");
+  el.type = "importmap";
+  el.id = "wp-importmap";
   el.textContent = JSON.stringify({ imports: map });
   document.head.appendChild(el);
 }
-
 
 /**
  * Client component that refreshes NextPress server-rendered assets
@@ -429,9 +447,10 @@ function updateImportMap(
  */
 export function AssetUpdater({
   pathname,
-  instance = 'default',
+  instance = "default",
   fetchAssets,
   bypassDomains = [],
+  reinitBypassHandles = [],
 }: AssetUpdaterProps) {
   // Watch the DOM for `__NEXTPRESS_*` placeholders in element attribute
   // values and rewrite them to proxy values on every mutation. Lives in
@@ -472,29 +491,31 @@ export function AssetUpdater({
         await updateScripts(
           assets.scripts,
           ScriptLoadingGroupEnum.HEADER,
-          'nextpress-head-scripts-start',
-          'nextpress-head-scripts-end',
+          "nextpress-head-scripts-start",
+          "nextpress-head-scripts-end",
           instance,
           pathname,
           bypassDomains,
+          reinitBypassHandles
         );
         if (cancelled) return;
 
         await updateScripts(
           assets.scripts,
           ScriptLoadingGroupEnum.FOOTER,
-          'nextpress-body-scripts-start',
-          'nextpress-body-scripts-end',
+          "nextpress-body-scripts-start",
+          "nextpress-body-scripts-end",
           instance,
           pathname,
           bypassDomains,
+          reinitBypassHandles
         );
         if (cancelled) return;
 
         firePageEvents();
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('[AssetUpdater] Failed to update assets:', error);
+        console.error("[AssetUpdater] Failed to update assets:", error);
       }
     })();
 
